@@ -1,5 +1,6 @@
-(ql:quickload "usocket")
+(in-package :clicc)
 
+(defun hello () (print "hello"))
 
 (defun readln (socket)
   (read-line (usocket:socket-stream socket)))
