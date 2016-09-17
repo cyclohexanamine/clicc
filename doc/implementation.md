@@ -43,6 +43,7 @@ Low-level connections are abstracted by a connection object. The high-level inte
 * Handler registration for message reception.
 * Getters and setters for metadata.
 * Destructor*.
+
 Internally, the connection should have its own thread for managing communication, with the send-message method adding the message to a queue to be sent when the internal thread processes it. When it receives a message, it should call the registered handler, passing a reference to itself as well as the message. 
 
 Metadata is an arbitrary plist, and is used by processors to inform the connection manager about the connection. This will typically be whether it's a client or server, user identity, client capabilities, and so on.
