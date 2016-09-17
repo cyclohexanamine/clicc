@@ -2,6 +2,16 @@
 
 CLICC is Common Lisp ICC, an ICC server implementation.
 
+1. [Components](#components)
+   1. [Connection manager](#connection-manager)
+      1. [Connection](#connection)
+   2. [State manager](#state-manager)
+      1. [Local database](#local-database)
+   3. [Processor](#processor)
+      1. [Message handler](#message-handler)
+      2. [Coordination manager](#coordination-manager)
+      3. [State protocol](#state-protocol)
+      4. [Request protocol](#request-protocol)
 
 ## Components
 
