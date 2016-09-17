@@ -9,6 +9,11 @@
     4. [Checksums](#checksums)
     5. [History consensus protocol](#history-consensus-protocol)
     6. [Duplicates](#duplicates)
+4. [Service semantics](#service-semantics)
+    1. [Messages](#messages)
+    2. [Users](#users)
+    3. [Channels](#channels)
+    4. [Network](#network)
 
 ## Introduction
 
