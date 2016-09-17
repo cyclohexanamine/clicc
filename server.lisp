@@ -1,3 +1,5 @@
+(in-package :clicc)
+
 (defun echo-tcp-handler (stream)
   (declare (type stream stream))
   (loop for line = (read-line stream nil :eof)

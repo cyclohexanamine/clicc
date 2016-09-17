@@ -99,13 +99,96 @@ When consensus is exchanged, soft duplicates should be discarded in a way that's
 
 ## Service semantics
 
-What an ICC service can do, what data is associated with what.
-
-### Users
+This defines what an ICC service can do for users, and what the state is in relation to the service.
 
 ### Messages
 
+Messages are, well, messages, the items of communication that the network ultimately exists to serve. 
+
+A message history is a list of 'recent' messages, where recency is some criteria consistent across the server. It may be recency in time, or number of lines, but if a message is recent then all messages after it must also be recent. Recent history should be large enough to use the service seeing only those messages on the client.
+
+Messages have the following format:
+* Checksum
+* Timestamp
+* From - sender name
+* To - recipient or channel name
+* Content type - plain text, or otherwise
+* Content - body of message
+* Soft - whether the message could be a soft duplicate
+
+None of these fields can be changed, and messages cannot be removed unless they are not unique or 'recent' enough. They can otherwise only be added. 
+
+Checksums should be reasonably unique, but the consequences of a collision are not dire, especially when the messages are far apart in time or otherwise distinct. They should be reproducible from the rest of the message. They must be (uniformly) randomly distributed.
+
+Timestamps are given by the server that creates the record. They ought to be millisecond-precise. The network should roughly agree on times.
+
+Messages that may enter the network in multiple places are soft; timestamp and hence checksum may differ between the different points of entry.
+
+
+### Users
+
+Users are the users of the network, who send and receive messages. A user is entitled to messages addressed to their name sent while they owned that name, and addressed to channels they are in sent at any time.
+
+A user has the following ACID fields:
+* Name - name that sends and receives messages
+* Ident, host, realname - like IRC
+* Modes
+Optionally:
+* Auth - information to authenticate a connection as this user
+    * Auth ID
+    * Password
+A connection can announce itself with a name, as with an IRC connection; if a user with the name does not already exist, one will be created, without auth, and the connection will be associated with it. Valid user names are limited, and do not overlap with valid channel names.
+
+Alternatively, a connection may identify itself with either a name or auth ID, and a password. If the user does not exist, one will be created with those properties. If the user already exists, the credentials will be checked before associating the connection with the user.
+
+These semantics are intended to allow persistent identity without much overhead, and integrated with transient users. Transient users, which IRC clients would receive, have no auth field, and are removed on disconnection. It may be that persistent users are removed after being disconnected for a while, unless, e.g., they provide an email address.
+
+Users also have BASE information:
+* Private message history - all private messages sent to and from this user.
+
+Users can request that servers create messages (the client sends a message to the network). This request is valid if the recipient is valid - an extant user, or a channel that the sender is in - and the message body is valid.
+
+Users can request history that they are entitled to. By default they will be served all messages to them - this is a property of their connection, and not the user itself. A user may issue commands to modify this behaviour and similar, as well as their own modes.
+
+Users can also request to join or leave channels, and change channel modes, the validity of which is detailed below. 
+
+
 ### Channels
+
+Channels are repositories of messages. Access to them can be controlled, and is public by default.
+
+A channel has the following ACID properties:
+* Name
+* Modes
+* Metadata - may include things like a description/topic
+
+Modes define access controls for a channel. A mode has a grammar that necessarily includes a mode type, and optional additional specifiers, which typically indicate who and when to apply that mode to.
+
+No modes are compulsory. Modes may include, among others, 
+* Ownership - who owns the channel
+* Modifiability - who can change modes, etc.
+* Visibility - who can see the channel in listings
+* Joinability - who can join, and by extension see the history of, the channel
+* Messagability - who can send messages at all, and what messages are valid for whom
+
+These may also have specifiers based on time, etc.
+
+A channel also has the following BASE properties:
+* Message history
+
+
+### Network
+
+The network itself has ACID state, mostly used to implement the service in the first place:
+* Name
+* Servers - a list of:
+    * Address - enough information to connect to the server
+    * Status - the server may be known to be offline
+* Misc protocol information - things such as
+    * Recentness criteria 
+    * Soft duplicate criteria
+    * Timezone - needed for timestamps to make sense
+    * etc.
 
 
 ## Communication

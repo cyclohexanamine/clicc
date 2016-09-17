@@ -30,7 +30,7 @@ Greater functionality is provided via services; client-like automated software t
     
 2. Improve resilience to poor network conditions.
     * Servers should be linked in a mesh such that partition is less likely.
-    * Servers should be able to maintain a consistent state despite partition.
+    * The network should be able to maintain a consistent state despite partition.
     * Clients should not need to maintain a single TCP connection to use the service.
     
    These two points allow for a chat experience more akin to Slack or Discord, with clients not having to keep track of history or being limited to one connection at a time. Private message history, and group private messaging, become possible. Users also don't feel the effects of server outages very much.
@@ -41,16 +41,16 @@ Greater functionality is provided via services; client-like automated software t
     
    There's a rich ecosystem of IRC clients that should be usable. In addition, being able to connect an ICC network to an IRC network makes it immediately useful, even when everyone uses IRC.
     
-   This does have a number of consequences. Servers must be multilingual, keeping track of which connections speak IRC and which ICC. Ephemeral users still need to be supported. And the most useful ICC features ought to integrate into the IRC client protocol somehow, likely in the same way as BNCs work now. 
+   This does have a number of consequences. Servers must be multilingual, keeping track of which connections speak IRC and which ICC. Ephemeral users still need to be supported. The ICC protocol must account for messages originating from IRC servers. And the most useful ICC features ought to integrate into the IRC client protocol somehow, likely in the same way as BNCs work now. 
 
 
 ## Brief overview of ICC
 
-ICC is a real-time text-based chat protocol. The service consists of a network of servers, implementing a global state consisting of the current network shape, a user database, and a channel database.
+ICC is a real-time chat protocol. The service consists of a network of servers implementing a global state, and each server serving connections from clients.
 
 The core difference compared to IRC is that this network is not really a relay. The network holds a canonical chat history for channels and users, and a database of metadata. Clients are notionally stateless, maintaining a local version of some of the network's state. This will typically be recent chat history for some users and channels, and some user and channel metadata.
 
-An ICC network can be thought of as a network of nodes that implement two distributed databases. One, for network shape and user and channel metadata, has ACID semantics; the other, for history, has BASE semantics.
+An ICC network can be thought of as a network of nodes that implement two distributed databases. One, for network, user and channel data, has ACID semantics; the other, for history, has BASE semantics.
 
 Clients then connect to servers and receive the state they request (and are entitled to), e.g., history and metadata for the user it identifies as and a few channels that user is in. Servers may proactively send state updates to a connected client, e.g., new messages and mode changes. Clients also send requests to servers to modify the state in some way, e.g., to add (send) a new message or join a new channel. The server coordinates this state change with the network, before reporting back to the client.
 
