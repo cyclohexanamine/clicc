@@ -9,6 +9,3 @@
           make-lock acquire-lock release-lock with-lock-held))
           
           
-
-(defun mashup-symbol (&rest objects)
-  (intern (format nil "~{~a~}" objects)))
