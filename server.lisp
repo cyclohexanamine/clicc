@@ -5,6 +5,7 @@
   (loop for line = (read-line stream nil :eof)
     until (eq line :eof)
     do (write-line line stream)
+       (write-line line)
        (force-output stream)))
       
 (defun hello-tcp-handler (stream)

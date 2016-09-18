@@ -12,4 +12,5 @@
                                      (:file "threaded-object")))
                (:module connection
                         :components ((:file "connection")
+                                     (:file "connection-manager")
                                      (:file "tcp-connection")))))

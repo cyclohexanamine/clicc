@@ -20,12 +20,8 @@
     :initform NIL)
    (data
     :initarg :data
-    :initform NIL)
-   (handler
-    :initarg :data
-    :initform (lambda (message data)))))
+    :initform NIL)))
 
 
 (defgeneric send-message (conn message &key success-callback failure-callback)
   (:documentation "Send a message along the connection. Optional callbacks can be registered."))
-

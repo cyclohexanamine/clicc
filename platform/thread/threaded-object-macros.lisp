@@ -10,9 +10,9 @@
 ;;; Macros for interface definitions.
 
 ;; Wraps finding the lock to be held based on the name of the slot.
-(defmacro with-slot-lock (conn slot &body body)
+(defmacro with-slot-lock (obj slot &body body)
   `(thread:with-lock-held
-     ((cdr (assoc ,slot (slot-value ,conn 'locks))))
+     ((cdr (assoc ,slot (slot-value ,obj 'locks))))
      ,@body))
 
 ;; Defines thread-safe accessors for object slots, based on with-slot-lock.
@@ -64,7 +64,11 @@
   `(progn
     ,@(loop for slot-name in slot-names collecting
       `(defslotinterface ,class-name ,slot-name ,(mashup-symbol 'read- slot-name) ,(mashup-symbol 'modify- slot-name)))
-    ))
+    (defmethod initialize-instance :after ((obj ,class-name) &key)
+      (setf (slot-value obj 'locks)
+        (nconc (slot-value obj 'locks)
+          (list ,@(loop for slot-name in slot-names
+                        collecting `(cons (quote ,slot-name) (thread:make-lock)))))))))
 
 
 ;; Creates a class with slots having names from threaded-object-slots, with initialisation forms of NIL, and generic interfaces.
@@ -73,11 +77,6 @@
     (defclass ,class-name ,parents
       ,(loop for slot-name in (threaded-object-slots)
              collecting `(,slot-name :initform NIL)))
-    (defmethod initialize-instance :after ((obj ,class-name) &key)
-      (setf (slot-value obj 'locks)
-        (nconc (slot-value obj 'locks)
-          (list ,@(loop for slot-name in (threaded-object-slots)
-                        collecting `(cons (quote ,slot-name) (thread:make-lock)))))))
     (defslotints ,class-name ,(threaded-object-slots))))
 
 
