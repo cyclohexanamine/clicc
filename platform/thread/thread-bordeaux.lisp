@@ -7,3 +7,8 @@
                     
 (export '(make-thread current-thread threadp thread-name
           make-lock acquire-lock release-lock with-lock-held))
+          
+          
+
+(defun mashup-symbol (&rest objects)
+  (intern (format nil "~{~a~}" objects)))

@@ -9,4 +9,6 @@
                (:module thread
                         :components ((:file "thread-bordeaux")
                                      (:file "threaded-object")))
-               (:file "connection")))
+               (:module connection
+                        :components ((:file "connection")
+                                     (:file "tcp-connection")))))

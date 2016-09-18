@@ -26,6 +26,6 @@
     :initform (lambda (message data)))))
 
 
-(defgeneric send-message (connection message &key success-callback failure-callback)
+(defgeneric send-message (conn message &key success-callback failure-callback)
   (:documentation "Send a message along the connection. Optional callbacks can be registered."))
 

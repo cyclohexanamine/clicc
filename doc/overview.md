@@ -55,3 +55,6 @@ An ICC network can be thought of as a network of nodes that implement two distri
 Clients then connect to servers and receive the state they request (and are entitled to), e.g., history and metadata for the user it identifies as and a few channels that user is in. Servers may proactively send state updates to a connected client, e.g., new messages and mode changes. Clients also send requests to servers to modify the state in some way, e.g., to add (send) a new message or join a new channel. The server coordinates this state change with the network, before reporting back to the client.
 
 The connection that a client uses is more or less arbitrary, as long as it is capable of delivering and receiving messages reliably. It need not be a single stream socket. The same is true of server-server connections, although in practice keeping a socket for as long as possible will reduce overhead somewhat.
+
+
+## 
