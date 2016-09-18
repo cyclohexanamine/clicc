@@ -10,6 +10,4 @@
   (let ((command (list :send message)))
     (if success-callback (nconc (list :success success-callback)))
     (if failure-callback (nconc (list :failure failure-callback)))
-    (thread:modify-queue conn 
-      (lambda (queue) 
-        (append queue (list command))))))
+    (thread:push-queue message)))

@@ -63,7 +63,21 @@
      
      
 (defslotints threaded-object (thread queue locks))
-  
+
+(defgeneric push-queue (obj msg))
+(defmethod push-queue ((obj threaded-object) msg)
+  (modify-queue obj 
+    (lambda (queue) 
+      (append queue (list msg)))))
+      
+(defgeneric pop-queue (obj))
+(defmethod pop-queue ((obj threaded-object))
+  (with-slot-lock obj 'queue 
+    (let* ((queue (slot-value obj 'queue))
+           (msg (car queue))
+           (new-queue (cdr queue)))
+      (setf (slot-value obj 'queue) new-queue)
+      msg)))
 
 
 ;; Wraps a class definition for a threaded-object, adding the correct lock initialiser and interfaces.
