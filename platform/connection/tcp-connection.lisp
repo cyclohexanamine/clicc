@@ -13,41 +13,41 @@
   (let ((command (list :send message)))
     (if success-callback (nconc (list :success success-callback)))
     (if failure-callback (nconc (list :failure failure-callback)))
-    (thread:push-queue message)))
+    (thread:push-queue conn command)))
 
-(defmethod make-processor ((conn tcp-connection))
+(defmethod thread:make-processor ((conn tcp-connection))
   (lambda ()
     ;; Main event loop
     ;; get-stream will handle reconnects, etc.
-    (loop for stream = (get-stream conn)
-          if stream
+    (loop for strm = (get-stream conn)
+          if strm
           do ;; Send a message if there's one to send.
              (let ((command (thread:pop-queue conn)))
-               (if (eq (car msg) :send)
-                 (send-stream-msg (stream (cdr message)))))
+               (if (eq (car command) :send)
+                 (write-line (cdr command) strm)))
              ;; Read a message if there is one.
-             (let ((newline (read-line-no-hang stream)))
+             (let ((newline (read-line-no-hang strm)))
                (if newline
                  (funcall (read-handler conn) newline (read-data conn)))))))
 
 
 (defun peek-char-no-hang (strm)
-  (let ((chr (read-char-no-hang strm :eof-error-p NIL :eof-value :eof)))
+  (let ((chr (read-char-no-hang strm NIL :eof)))
     (if (and (not (eq chr :eof)) chr)
       (unread-char chr strm))
     chr))
 
 (defun read-line-no-hang (strm)
-  (if (peek-char-no-hang (strm))
-    (read-line strm :eof-error-p NIL :eof-value NIL)))
+  (if (peek-char-no-hang strm)
+    (read-line strm NIL NIL)))
 
 (defun socket-alive (sock)
   (if sock
-    (let (strm (usocket:socket-stream sock))
+    (let ((strm (usocket:socket-stream sock)))
       (not (eq (peek-char-no-hang strm) :eof)))
     NIL))
 
-(defun get-stream (conn tcp-connection)
+(defun get-stream (conn)
   (let ((sock (read-socket conn)))
     ;; Reconnect if the socket is dead.
     (if (not (socket-alive sock))

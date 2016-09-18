@@ -3,7 +3,7 @@
   (:export :make-thread :current-thread :threadp :thread-name :newthread
            :make-lock :acquire-lock :release-lock :with-lock-held
            :threaded-object :defslotinterface :defslotints :defclass-threaded :with-slot-lock
-           :push-queue :pop-queue :modify-thread))
+           :push-queue :pop-queue :modify-thread :make-processor :start-processor))
 
 
 (defpackage :connection
