@@ -6,8 +6,10 @@
 ;;; Locks is an alist of locks made by (thread:make-lock), with names corresponding to the slots they protect.
 
 (defclass threaded-object ()
-  (thread
-   queue
+  ((thread
+    :initform NIL)
+   (queue
+    :initform NIL)
    locks))
 
 (defun mashup-symbol (&rest objects)
