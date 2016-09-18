@@ -67,7 +67,7 @@
     ,@(loop for slot-name in slot-names collecting
       `(defslotinterface ,class-name ,slot-name ,(mashup-symbol 'read- slot-name) ,(mashup-symbol 'modify- slot-name)))))
 
-;; Creates a class with slots having names from threaded-object-slots, with initialisation forms of NILm and generic interfaces.
+;; Creates a class with slots having names from threaded-object-slots, with initialisation forms of NIL, and generic interfaces.
 (defmacro defclass-with-slots (class-name parents)
   `(progn
     (defclass ,class-name ,parents
@@ -76,7 +76,7 @@
     (defslotints ,class-name ,(threaded-object-slots))))
         
 
-;;; Helpers for the above macros.
+;;; Some helper macros and macro functions.
 
 (defun mashup-symbol (&rest objects)
   (intern (format nil "~{~a~}" objects)))

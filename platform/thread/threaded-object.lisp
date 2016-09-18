@@ -25,3 +25,11 @@
            (new-queue (cdr queue)))
       (setf (slot-value obj 'queue) new-queue)
       msg)))
+
+(defgeneric make-processor (obj))
+
+(defgeneric begin-processor (obj))
+(defmethod begin-processor ((obj threaded-object))
+  (let ((processor (make-processor obj)))
+    (setf (read-thread obj) (newthread processor))))
+    
