@@ -3,7 +3,7 @@
   :version "0.0.1"
   :author ""
   :licence "MIT"
-  :depends-on ("bordeaux-threads")
+  :depends-on ("bordeaux-threads" "usocket")
   :serial T
   :components ((:file "package")
                (:module thread
