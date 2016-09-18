@@ -6,6 +6,7 @@
   :depends-on ("bordeaux-threads")
   :serial T
   :components ((:file "package")
-               (:file "thread-bordeaux")
-               (:file "threaded-object")
+               (:module thread
+                        :components ((:file "thread-bordeaux")
+                                     (:file "threaded-object")))
                (:file "connection")))
