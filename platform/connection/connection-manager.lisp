@@ -2,81 +2,45 @@
 
 (thread:defclass-threaded connection-manager ()
   ((address
-    :initform '(#(0 0 0 0) 5678))
-   (listener-thread
-    :initform NIL)
-   (listener
-    :initform NIL)
+    :initarg :address)
    (connections
     :initform NIL)
    (message-handler
     :initform (lambda (message data) (write-line message)))
    (id-counter :initform 0)))
-(thread:defslotints connection-manager (listener connections message-handler id-counter))
+(thread:defslotints connection-manager (connections message-handler id-counter))
 
 
-(defmethod thread:make-processor ((manager connection-manager))
-  (lambda ()
-    ; Open the listener socket
-    (setf (slot-value manager 'listener)
-      (let ((addr (slot-value manager 'address)))
-        (usocket:socket-listen (car addr) (cadr addr))))
-    (add-connection manager (slot-value manager 'listener))
 
-    ;; Listener loop
-    (setf (slot-value manager 'listener-thread)
-      (thread:newthread loop
-        (loop for sock in (usocket:wait-for-input (read-connections manager) :timeout 1000 :ready-only T) do
-          (cond ((eq sock (read-listener manager))
-                  (accept-connection manager))
-                ((peek-char-eof sock)
-                  (remove-connection manager sock))
-                (T
-                  (process-message manager sock))))))
+(defmethod new-id ((manager connection-manager))
+  (modify-id-counter manager #'1+))
 
-    ;; Event loop
-    (loop for msg = (thread:pop-queue manager)
-      do (if msg
-            (case (car msg)
-              (:send (send-message manager msg)))
-            (sleep 0.1)))))
-
-            
-(defun accept-connection (manager)
-  (let* ((listener (read-listener manager))
-         (new-conn (usocket:socket-accept listener))
-         (new-id (modify-id-counter manager #'1+)))
-    (format T "~a" new-id)
-    (add-connection manager new-conn)))
-
-(defun add-connection (manager sock)
+(defmethod add-connection ((manager connection-manager) conn)
+  (modify-data conn
+    (lambda (data)
+      (setf (get data :id) (new-id manager))))
   (modify-connections manager
     (lambda (conns)
-      (nconc conns (list sock)))))
+      (nconc conns (list conn)))))
 
-(defun remove-connection (manager sock)
+(defmethod remove-connection ((manager connection-manager) conn)
   (modify-connections manager
     (lambda (conns)
-      (remove sock conns)))
-  (usocket:socket-close sock))
+      (remove conn conns)))
+  (close-connection conn))
 
-(defun process-message (manager sock)
-  (let ((message (read-line (usocket:socket-stream sock)))
-        (handler (read-message-handler manager)))
-    (thread:newthread funcall handler message ())))
+(defmethod process-message ((manager connection-manager) conn)
+  (let ((message (read-message conn)))
+    (thread:push-queue manager (list :recv message (read-data conn)))))
 
-(defun send-message (manager msg)
+(defmethod handle-message ((manager connection-manager) message data)
+  (let ((handler (read-message-handler manager)))
+    (funcall handler message data)))
+
+(defmethod send-message-to ((manager connection-manager) msg criteria)
   (thread:with-slot-lock manager 'connections
-    (loop for sock in (slot-value manager 'connections)
-      if (not (eq sock (read-listener manager)))
-      do (let ((strm (usocket:socket-stream sock)))
-           (write-line msg strm)
-           (force-output strm)))))
+    (loop for conn in (slot-value manager 'connections)
+      if (match-connection conn criteria)
+      do (send-message conn msg))))
 
-(defun peek-char-eof (sock)
-  (let* ((strm (usocket:socket-stream sock))
-         (char (read-char strm NIL :eof)))
-    (if (eq char :eof)
-      T
-      (progn (unread-char char strm) NIL))))
 

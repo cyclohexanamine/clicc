@@ -4,7 +4,7 @@
 
 ;; The generic threaded object slots.
 (defmacro threaded-object-slots ()
-  ''(thread queue locks))
+  ''(threads queue locks))
 
 
 ;;; Macros for interface definitions.
@@ -78,6 +78,21 @@
       ,(loop for slot-name in (threaded-object-slots)
              collecting `(,slot-name :initform NIL)))
     (defslotints ,class-name ,(threaded-object-slots))))
+    
+    
+;; Builds an internal processor based on a list of forms of
+;; (init-form body-form num-threads)
+;; Each init form will be evaluated once, and each body-form will loop forever in its own thread, with num-threads separate threads for it.
+(defmacro defprocessors (names &body forms)
+  `(defmethod thread:make-processor (,names)
+    (lambda ()
+      ,@(mapcar #'car forms)
+      ,@(loop for form in forms collecting
+          `(loop repeat ,(caddr form) do
+              (modify-threads ,(car names)
+                (lambda (threads)
+                  (nconc threads (list (thread:newthread loop
+                                          ,(cadr form)))))))))))
 
 
 ;;; Some helper macros and macro functions.

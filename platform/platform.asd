@@ -13,4 +13,5 @@
                (:module connection
                         :components ((:file "connection")
                                      (:file "connection-manager")
-                                     (:file "tcp-connection")))))
+                                     (:file "tcp-connection")
+                                     (:file "tcp-connection-manager")))))

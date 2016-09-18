@@ -5,50 +5,62 @@
 (export 'tcp-connection)
 
 (defclass tcp-connection (connection)
-  ((socket
+  ((address
+    :initarg :address
+    :initform '(#(0 0 0 0) 5678))
+    (socket
+    :initarg :socket
+    :initform NIL)
+    (listener-p
+    :initarg :listener-p
     :initform NIL)))
-(thread:defslotints tcp-connection (socket))
+(thread:defslotints tcp-connection (socket listener-p))
 
 
 ;; External interface
 
-; (defmethod send-message ((conn tcp-connection) message &key success-callback failure-callback)
-  ; (thread:newthread 
-    ; (modify-stream conn
-      ; (lambda (strm)
-        ; (
+(defmethod send-message ((conn tcp-connection) message &key success-callback failure-callback)
+  (modify-socket conn
+    (lambda (sock)
+      (let ((strm (usocket:socket-stream sock)))
+        (write-line message strm)
+        (force-output strm)
+        sock))))
+        
+(defmethod read-message ((conn tcp-connection))
+  (let (message)
+    (modify-socket conn
+      (lambda (sock)
+        (let ((strm (usocket:socket-stream sock)))
+          (setf message (read-line strm))
+          sock)))
+    message))
+
+(defmethod is-alive ((conn tcp-connection))
+  (let ((sock (read-socket conn)))
+    (and sock
+         (peek-char-eof sock))))
+
+(defmethod close-connection ((conn tcp-connection))
+  (modify-socket conn
+    (lambda (sock)
+      (usocket:socket-close sock)
+      sock)))
 
 
 ;; Internals
 
+(defun make-tcp-connection (sock)
+  (let ((addr (list (usocket:get-peer-address sock) (usocket:get-peer-port sock))))
+    (make-instance 'tcp-connection :address addr :socket sock)))
 
+(defun make-tcp-listener (sock)
+  (let ((addr (list (usocket:get-local-address sock) (usocket:get-local-port sock))))
+    (make-instance 'tcp-connection :address addr :socket sock :listener-p T)))
 
-
-
-; (defun peek-char-no-hang (strm)
-  ; (if strm
-    ; (let ((chr (read-char-no-hang strm NIL :eof)))
-      ; (if (and (not (eq chr :eof)) chr)
-        ; (unread-char chr strm))
-      ; chr)))
-
-; (defun read-line-no-hang (strm)
-  ; (if (peek-char-no-hang strm)
-    ; (read-line strm NIL NIL)))
-
-; (defun socket-alive (sock)
-  ; (if sock
-    ; (let ((strm (usocket:socket-stream sock)))
-      ; (not (eq (peek-char-no-hang strm) :eof)))
-    ; NIL))
-
-
-; (defun get-stream (conn)
-  ; (let ((sock (read-socket conn)))
-    ; (usocket:socket-stream sock)))
-
-
-    ; (if (not (socket-alive sock))
-      ; (setf sock (let* ((addr (read-address conn))
-                     ; (newsocket (usocket:socket-connect (car addr) (cadr addr))))
-                       ; (setf (read-socket conn) newsocket))))
+(defun peek-char-eof (sock)
+  (let* ((strm (usocket:socket-stream sock))
+         (char (read-char strm NIL :eof)))
+    (if (eq char :eof)
+      T
+      (progn (unread-char char strm) NIL))))

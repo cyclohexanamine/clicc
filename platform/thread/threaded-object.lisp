@@ -31,5 +31,5 @@
 (defgeneric start-processor (obj))
 (defmethod start-processor ((obj threaded-object))
   (let ((processor (make-processor obj)))
-    (setf (read-thread obj) (newthread funcall processor))))
+    (funcall processor)))
     
