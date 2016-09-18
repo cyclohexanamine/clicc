@@ -12,8 +12,9 @@
     :initform NIL)
    locks))
 
-(defun mashup-symbol (&rest objects)
-  (intern (format nil "~{~a~}" objects)))
+(eval-when (:load-toplevel :compile-toplevel :execute)
+  (defun mashup-symbol (&rest objects)
+    (intern (format nil "~{~a~}" objects))))
 
 
 ;; Wraps finding the lock to be held based on the name of the slot.

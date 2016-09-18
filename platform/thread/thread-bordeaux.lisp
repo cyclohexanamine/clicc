@@ -8,4 +8,7 @@
 (export '(make-thread current-thread threadp thread-name
           make-lock acquire-lock release-lock with-lock-held))
           
-          
+(defmacro newthread (fname &rest args)
+  `(make-thread
+    (lambda ()
+      (,fname ,@args))))

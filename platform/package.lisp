@@ -1,6 +1,6 @@
 (defpackage :thread
   (:use :cl)
-  (:export :make-thread :current-thread :threadp :thread-name
+  (:export :make-thread :current-thread :threadp :thread-name :newthread
            :make-lock :acquire-lock :release-lock :with-lock-held
            :threaded-object :defslotinterface :defclass-threaded :with-slot-lock
            :push-queue :pop-queue :modify-thread))
