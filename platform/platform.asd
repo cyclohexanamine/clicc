@@ -8,6 +8,7 @@
   :components ((:file "package")
                (:module thread
                         :components ((:file "thread-bordeaux")
+                                     (:file "threaded-object-macros")
                                      (:file "threaded-object")))
                (:module connection
                         :components ((:file "connection")
