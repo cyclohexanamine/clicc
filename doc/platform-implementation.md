@@ -100,6 +100,7 @@ The processor implements the protocol-aware logic on the server. It is responsib
 #### Message handler
 
 The message handler provides a translation between raw messages, which the connection manager will pass, and various command constructs. It is the dispatch control for any messages received, and the point of contact for sending messages. When a message is received, there are typically one of three things that can happen:
+
 1. The message is unexpected, and kicks off a new process. In this case the handler initiates the necessary process.
 2. The message is expected as part of some ongoing process, in which case the handler passes it off to this process, most likely via the coordination manager.
 3. The message is invalid. It may be sent to a special process, or just ignored.
