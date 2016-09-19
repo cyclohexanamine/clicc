@@ -1,20 +1,20 @@
-# CLICC Implementation
+# Platform Implementation
 
-CLICC is Common Lisp ICC, an ICC server implementation.
+A Common Lisp server, intended to be networked into a fairly generic distributed service.
 
 **Components**:
-   1. [Threads](#threads)
-   2. [Connection manager](#connection-manager)
-      1. [Connection](#connection)
-      2. [Multi connection manager](#multi-connection-manager)
-   3. [State manager](#state-manager)
-      1. [Local database](#local-database)
-      2. [Database processor](#database-processor)
-   4. [Processor](#processor)
-      1. [Message handler](#message-handler)
-      2. [Coordination manager](#coordination-manager)
-      3. [State protocol](#state-protocol)
-      4. [Service protocol](#service-protocol)
+1. [Threads](#threads)
+2. [Connection manager](#connection-manager)
+   1. [Connection](#connection)
+   2. [Multi connection manager](#multi-connection-manager)
+3. [State manager](#state-manager)
+   1. [Local database](#local-database)
+   2. [Database processor](#database-processor)
+4. [Processor](#processor)
+   1. [Message handler](#message-handler)
+   2. [Coordination manager](#coordination-manager)
+   3. [State protocol](#state-protocol)
+   4. [Service protocol](#service-protocol)
 
 
 ## Components
