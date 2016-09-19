@@ -7,6 +7,6 @@
 
 ICC is also designed to be easy to implement for clients, and to be interoperable with the IRC protocol. 
 
-See `docs/overview.md` for a broad overview of the ICC protocol, and `docs/techspec.md` for its technical details. The protocol is currently under active revision.
+See `docs/icc-overview.md` for a broad overview of the ICC protocol, and `docs/icc-techspec.md` for its technical details. The protocol is currently under active revision.
 
-**CLICC** is a Common Lisp ICC server implementation. It's intended to be usable in practice. See `docs/implementation.md` for details. It is currently incomplete.
+**CLICC** is a Common Lisp ICC server implementation, intended to be usable in practice. It uses a generic distributed service platform, details of which are in `docs/platform-implementation.md`. See `docs/icc-implementation.md` for details of the ICC implementation itself. It is currently incomplete.
