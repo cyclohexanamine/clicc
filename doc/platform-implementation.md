@@ -3,6 +3,7 @@
 A Common Lisp server, intended to be networked into a fairly generic distributed service.
 
 **Components**:
+
 1. [Threads](#threads)
 2. [Connection manager](#connection-manager)
    1. [Connection](#connection)
