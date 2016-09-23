@@ -30,4 +30,4 @@
     (every #'identity
       (loop for label in criteria
          for val   in criteria
-         collecting (eq (get data label) val)))))
+         collecting (equal (get data label) val)))))

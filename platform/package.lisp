@@ -3,7 +3,7 @@
   (:export :seqp :defmethod-g))
 
 (defpackage :thread
-  (:use :cl)
+  (:use :cl :mac)
   (:export :make-thread :current-thread :threadp :thread-name :newthread
            :make-lock :acquire-lock :release-lock :with-lock-held
            :threaded-object :defslotinterface :defslotints :defclass-threaded :defprocessors :with-slot :modify-slot
@@ -11,7 +11,7 @@
 
 
 (defpackage :connection
-  (:use :cl)
+  (:use :cl :mac)
   (:export :connection
            :read-status :modify-status
            :read-data :modify-data
