@@ -20,20 +20,18 @@
 ;; External interface
 
 (defmethod send-message ((conn tcp-connection) message &key success-callback failure-callback)
-  (modify-socket conn
-    (lambda (sock)
-      (let ((strm (usocket:socket-stream sock)))
-        (write-line message strm)
-        (force-output strm)
-        sock))))
+  (thread:modify-slot conn (sock 'socket)
+    (let ((strm (usocket:socket-stream sock)))
+      (write-line message strm)
+      (force-output strm)
+      sock)))
         
 (defmethod read-message ((conn tcp-connection))
   (let (message)
-    (modify-socket conn
-      (lambda (sock)
-        (let ((strm (usocket:socket-stream sock)))
-          (setf message (read-line strm))
-          sock)))
+    (thread:modify-slot conn (sock 'socket)
+      (let ((strm (usocket:socket-stream sock)))
+        (setf message (read-line strm))
+        sock))
     message))
 
 (defmethod is-alive ((conn tcp-connection))
@@ -42,10 +40,9 @@
          (peek-char-eof sock))))
 
 (defmethod close-connection ((conn tcp-connection))
-  (modify-socket conn
-    (lambda (sock)
-      (usocket:socket-close sock)
-      sock)))
+  (thread:modify-slot conn (sock 'socket)
+    (usocket:socket-close sock)
+    sock))
 
 
 ;; Internals

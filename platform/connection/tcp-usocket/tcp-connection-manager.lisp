@@ -5,7 +5,8 @@
 (export 'tcp-connection-manager)
 
 (defclass tcp-connection-manager (connection-manager)
-  (listener))
+  (listener
+   wait))
 (thread:defslotints tcp-connection-manager (wait listener))
 
 
@@ -29,7 +30,7 @@
 
   (let ((conns (wait-for-tcp-connections manager)))
     (loop for conn in conns do
-      (cond ((read-listener-p conn)
+      (cond ((read-listener-p conn) ;; FIXME
               (accept-connection manager conn))
             ((is-alive conn)
               (remove-connection manager conn))
@@ -48,16 +49,14 @@
   5))
 
 (defmethod wait-for-tcp-connections ((manager tcp-connection-manager))
-  (thread:with-slot-lock manager 'wait
-    (let* ((socks (thread:with-slot-lock manager 'connections
-                    (let ((conns (slot-value manager 'connections)))
-                      (mapcar #'read-socket conns))))
+  (thread:with-slot manager (wait 'wait)
+    (let* ((socks (thread:with-slot manager (conns 'connections)
+                    (mapcar #'read-socket conns)))
            (input-socks (usocket:wait-for-input socks :timeout 1000 :ready-only T)))
-      (thread:with-slot-lock manager 'connections
-        (let ((conns (slot-value manager 'connections)))
-          (remove-if-not 
-            (lambda (conn) (is-sock-connection-p conn input-socks))
-            conns))))))
+      (thread:with-slot manager (conns 'connections)
+        (remove-if-not 
+          (lambda (conn) (is-sock-connection-p conn input-socks))
+          conns)))))
 
 (defun is-sock-connection-p (conn socks)
   (member (read-socket conn) socks))
