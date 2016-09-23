@@ -12,8 +12,5 @@
 
 (defpackage :connection
   (:use :cl :mac)
-  (:export :connection
-           :read-status :modify-status
-           :read-data :modify-data
-           :send-message
-           :read-handler))
+  (:export :connection :connection-manager
+           :read-handler :send-message-to))
