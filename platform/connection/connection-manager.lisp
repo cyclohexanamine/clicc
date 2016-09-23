@@ -13,11 +13,11 @@
 
 
 (defmethod-g new-id ((manager connection-manager))
-  (thread:modify-slot manager (id-counter 'id-counter)
+  (thread:modify-slot manager id-counter
     (1+ id-counter)))
 
 (defmethod-g add-connection ((manager connection-manager) conn)
-  (thread:with-slot conn (data 'data)
+  (thread:with-slot conn data
     (setf (get data :id) (new-id manager)))
   (thread:modify-slot manager (conns 'connections)
     (nconc conns (list conn))))

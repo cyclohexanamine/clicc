@@ -32,7 +32,7 @@
         
 (defmethod read-message ((conn tcp-connection))
   (thread:with-slot conn (sock 'socket)
-    (thread:with-slot conn (buffer 'buffer)
+    (thread:with-slot conn buffer
       (read-with-buffer (usocket:socket-stream sock) buffer))))
 
 (defmethod is-alive ((conn tcp-connection))

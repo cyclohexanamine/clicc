@@ -11,22 +11,32 @@
 
 ;; Wraps finding the lock to be held based on the name of the slot,
 ;; and binds the slot value to a given name. If the slot is unbound,
-;; NIL will be used instead.
-(defmacro with-slot (obj (bind-name slot-name) &body body)
-  `(with-lock-held ((cdr (assoc ,slot-name (slot-value ,obj 'locks))))
-    (let ((,bind-name 
-            (if (slot-boundp ,obj ,slot-name)
-              (slot-value ,obj ,slot-name))))
-      ,@body)))
+;; NIL will be used instead. If a name is not given, it will be taken
+;; to be the same as the slot name.
+(defmacro with-slot (obj slot-def &body body)
+  (destructuring-bind (bind-name slot-name)
+                        (if (consp slot-def)
+                          (list (car slot-def) (cadr slot-def))
+                          (list slot-def (mquote slot-def)))
+    `(with-lock-held ((cdr (assoc ,slot-name (slot-value ,obj 'locks))))
+      (let ((,bind-name 
+              (if (slot-boundp ,obj ,slot-name)
+                (slot-value ,obj ,slot-name))))
+        ,@body))))
 
 ;; Defines a read-and-set macro for a slot, in the form of, e.g.,
 ;;  (modify-slot classabc (xyzval 'xyz)
 ;;    (do-something xyz)
 ;;    (value-to-set))
-(defmacro modify-slot (obj (bind-name slot-name) &body body)
-  `(with-slot ,obj (,bind-name ,slot-name)
+;; If a binding name is not given, it will be taken to be the same
+;; as the slot name.
+(defmacro modify-slot (obj slot-def &body body)
+  (let ((slot-name (if (consp slot-def)
+                      (cadr slot-def)
+                      (mquote slot-def))))
+  `(with-slot ,obj ,slot-def
     (setf (slot-value ,obj ,slot-name)
-      (progn ,@body))))
+      (progn ,@body)))))
 
 ;; Defines thread-safe accessors for object slots, based on with-slot.
 (defmacro defaccessor (class-name accessor-name slot-name)
@@ -94,22 +104,15 @@
       ;; which loops that form forever.
       ,@(loop for form in forms collecting
           `(loop repeat ,(caddr form) do
-              (modify-slot ,bind-name (threads 'threads)
+              (modify-slot ,bind-name threads
                   (nconc threads (list (newthread loop
                                           ,(cadr form))))))))))
 
 
 ;;; Some helper macros and macro functions.
 
-(defun mashup-symbol (&rest objects)
-  (intern (format nil "~{~a~}" objects)))
-
 (defun get-slot-names (slots)
   (loop for slot in slots
     collecting (if (consp slot)
                   (car slot)
                   slot)))
-
-(defmacro eval-when-compile (&body body)
-  `(eval-when (:load-toplevel :compile-toplevel :execute)
-     ,@body))

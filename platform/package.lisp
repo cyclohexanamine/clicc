@@ -1,6 +1,6 @@
 (defpackage :mac
   (:use :cl)
-  (:export :seqp :defmethod-g))
+  (:export :seqp :defmethod-g :mashup-symbol :mquote :eval-when-compile))
 
 (defpackage :thread
   (:use :cl :mac)

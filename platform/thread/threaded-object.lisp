@@ -12,13 +12,13 @@
 ;; Push a message to the back of the internal queue.
 (defgeneric push-queue (obj msg))
 (defmethod push-queue ((obj threaded-object) msg)
-  (modify-slot obj (queue 'queue)
+  (modify-slot obj queue
     (append queue (list msg))))
       
 ;; Pop a message from the front of the internal queue.
 (defgeneric pop-queue (obj))
 (defmethod pop-queue ((obj threaded-object))
-  (with-slot obj (queue 'queue)
+  (with-slot obj queue
     (let* ((msg (car queue))
            (new-queue (cdr queue)))
       (setf (slot-value obj 'queue) new-queue)

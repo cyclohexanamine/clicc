@@ -18,3 +18,16 @@
       `(defgeneric ,fname ,genargs))
     ;; Define the method itself.
     (defmethod ,fname ,args ,@body))))
+
+
+;; Concatenate the given symbols literally.
+(defun mashup-symbol (&rest objects)
+  (intern (format nil "~{~a~}" objects)))
+
+;; Quote a symbol at macro expansion time (i.e., prepend ' to it).
+(defun mquote (sym) `',sym)
+
+;; Evaluate body at compile time.
+(defmacro eval-when-compile (&body body)
+  `(eval-when (:load-toplevel :compile-toplevel :execute)
+     ,@body))
