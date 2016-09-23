@@ -12,7 +12,7 @@
 
 ;; External interface
 
-(defmethod accept-connection ((manager tcp-connection-manager) conn)
+(mac:defmethod-g accept-connection ((manager tcp-connection-manager) conn)
   (let* ((listener (read-socket conn))
          (new-conn (usocket:socket-accept listener)))
     (add-connection manager (make-tcp-connection new-conn))))
@@ -30,7 +30,7 @@
 
   (let ((conns (wait-for-tcp-connections manager)))
     (loop for conn in conns do
-      (cond ((read-listener-p conn) ;; FIXME
+      (cond ((read-listener-p conn)
               (accept-connection manager conn))
             ((is-alive conn)
               (remove-connection manager conn))
@@ -48,7 +48,7 @@
       (sleep 0.1)))
   5))
 
-(defmethod wait-for-tcp-connections ((manager tcp-connection-manager))
+(mac:defmethod-g wait-for-tcp-connections ((manager tcp-connection-manager))
   (thread:with-slot manager (wait 'wait)
     (let* ((socks (thread:with-slot manager (conns 'connections)
                     (mapcar #'read-socket conns)))

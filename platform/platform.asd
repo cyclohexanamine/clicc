@@ -6,6 +6,7 @@
   :depends-on ("bordeaux-threads" "usocket")
   :serial T
   :components ((:file "package")
+               (:file "global-macros")
                (:module thread
                         :components ((:module backend
                                              :components ((:file "thread-bordeaux")))

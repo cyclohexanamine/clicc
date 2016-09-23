@@ -24,6 +24,7 @@
 (defgeneric is-alive (conn))
 (defgeneric close-connection (conn))
 
+(defgeneric match-connection (conn criteria))
 (defmethod match-connection ((conn connection) criteria)
   (let ((data (read-data conn)))
     (every #'identity

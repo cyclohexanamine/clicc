@@ -30,16 +30,16 @@
 
 ;; Defines thread-safe accessors for object slots, based on with-slot.
 (defmacro defaccessor (class-name accessor-name slot-name)
-  `(defmethod ,accessor-name ((obj ,class-name))
+  `(mac:defmethod-g ,accessor-name ((obj ,class-name))
     (with-slot obj (val ,slot-name)
       ;; Copy sequences in case the returned value is used destructively.
-      (if (typep val 'sequence)
+      (if (mac:seqp val)
         (copy-seq val)
         val))))
 
 ;; Defines a setter for an above accessor.
 (defmacro defsetter (class-name accessor-name slot-name)
-  `(defmethod (setf ,accessor-name) (new-val (obj ,class-name))
+  `(mac:defmethod-g (setf ,accessor-name) (new-val (obj ,class-name))
     (thread:with-slot obj (old-val ,slot-name)
       (setf (slot-value obj ,slot-name) new-val))))
 
@@ -86,7 +86,7 @@
 ;; Each init form will be evaluated once, and each body-form will loop forever
 ;; in its own thread, with num-threads separate threads for it.
 (defmacro defprocessors ((bind-name class-name) &body forms)
-  `(defmethod thread:make-processor ((,bind-name ,class-name))
+  `(mac:defmethod-g thread:make-processor ((,bind-name ,class-name))
     (lambda ()
       ;; Collect init forms here.
       ,@(mapcar #'car forms)
