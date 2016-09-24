@@ -18,7 +18,7 @@
                         (if (consp slot-def)
                           (list (car slot-def) (cadr slot-def))
                           (list slot-def (mquote slot-def)))
-    `(with-lock-held ((cdr (assoc ,slot-name (slot-value ,obj 'locks))))
+    `(with-recursive-lock-held ((cdr (assoc ,slot-name (slot-value ,obj 'locks))))
       (let ((,bind-name 
               (if (slot-boundp ,obj ,slot-name)
                 (slot-value ,obj ,slot-name))))
@@ -79,7 +79,7 @@
       (setf (slot-value obj 'locks)
         (nconc (slot-value obj 'locks)
           (list ,@(loop for slot-name in slot-names
-                        collecting `(cons (quote ,slot-name) (make-lock)))))))))
+                        collecting `(cons (quote ,slot-name) (make-recursive-lock)))))))))
 
 
 ;; Creates a class with slots having names from threaded-object-slots, with initialisation forms of NIL, and generic interfaces.

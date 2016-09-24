@@ -4,7 +4,7 @@
 
 
 ;;; The object itself. Thread will be its internal thread, and queue a message queue for this thread.
-;;; Locks is an alist of locks made by (thread:make-lock), with names corresponding to the slots they protect.
+;;; Locks is an alist of locks made by (thread:make-recursive-lock), with names corresponding to the slots they protect.
 
 (defclass-with-slots threaded-object ())
 
