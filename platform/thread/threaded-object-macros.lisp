@@ -4,7 +4,7 @@
 
 ;; The generic threaded object slots.
 (defmacro threaded-object-slots ()
-  ''(threads queue locks))
+  ''(threads queue locks processors))
 
 
 ;;; Macros for interface definitions.
@@ -89,24 +89,35 @@
       ,(loop for slot-name in (threaded-object-slots)
              collecting `(,slot-name :initform NIL)))
     (defslotints ,class-name ,(threaded-object-slots))))
+    
+    
+;; Take a body form and turn it into a function to call on initialisation.
+(defmacro make-init-func (init-form)
+  `(lambda () ,init-form))
+  
+;; Take a body form and turn it into a function to start/loop it as a processor.
+;; In future this should check for signals to pause/stop/start, etc.
+(defmacro make-processor-func (loop-form)
+  `(lambda () (loop ,loop-form)))
 
 
-;; Builds an internal processor based on a list of forms of
-;; (init-form body-form num-threads)
+;; Builds internal processors based on a list of forms of
+;; (name init-form body-form num-threads)
 ;; Each init form will be evaluated once, and each body-form will loop forever
 ;; in its own thread, with num-threads separate threads for it.
 (defmacro defprocessors ((bind-name class-name) &body forms)
-  `(defmethod-g thread:make-processor ((,bind-name ,class-name))
-    (lambda ()
-      ;; Collect init forms here.
-      ,@(mapcar #'car forms)
-      ;; Then for each loop form, spawn a new thread however many times requested
-      ;; which loops that form forever.
-      ,@(loop for form in forms collecting
-          `(loop repeat ,(caddr form) do
-              (modify-slot ,bind-name threads
-                  (nconc threads (list (newthread loop
-                                          ,(cadr form))))))))))
+  ;; First, wrap the forms given in lambdas.
+  (let ((wrapped-forms (loop for form in forms collecting
+                        `(list ,(car form)
+                               (make-init-func ,(cadr form))
+                               (make-processor-func ,(caddr form))
+                               ,(cadddr form)
+                               NIL))))
+    ;; Then define the make-processors method populating the processors slot with
+    ;; these processors.
+    `(defmethod-g thread:make-processors ((,bind-name ,class-name))
+      (setf (slot-value ,bind-name 'processors)
+        (list ,@wrapped-forms)))))
 
 
 ;;; Some helper macros and macro functions.

@@ -24,10 +24,24 @@
       (setf (slot-value obj 'queue) new-queue)
       msg)))
 
-(defgeneric make-processor (obj))
+;; Methods for this are defined by defprocessors. When called, this will populate the object's
+;; 'processors' slot with a list of processors of the form
+;;  (name init-form loop-form number-of-threads thread-list)
+(defgeneric make-processors (obj))
 
-(defgeneric start-processor (obj))
-(defmethod start-processor ((obj threaded-object))
-  (let ((processor (make-processor obj)))
-    (funcall processor)))
-    
+;; Call make-processors and set them all running, having called the init forms.
+(defgeneric start-processors (obj))
+(defmethod start-processors ((obj threaded-object))
+  (make-processors obj)
+  (destructuring-bind (names init-funcs loop-funcs num-threads thread-lists) (zipcar (slot-value obj 'processors))
+    ;; Run all the initialisations first.
+    (loop for init-func in init-funcs
+      do (funcall init-func))
+      
+    ;; Then start the loops.
+    (loop for loop-func in loop-funcs
+          for num-thread in num-threads
+          for thread-list in thread-lists do
+            (setf thread-list
+              (loop repeat num-thread collecting
+                (thread:newthread funcall (lambda () (loop (funcall loop-func)))))))))

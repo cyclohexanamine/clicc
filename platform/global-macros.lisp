@@ -31,3 +31,7 @@
 (defmacro eval-when-compile (&body body)
   `(eval-when (:load-toplevel :compile-toplevel :execute)
      ,@body))
+     
+;; Zips a list of lists.
+(defmacro zipcar (listlist)
+  `(apply #'mapcar #'list ,listlist))

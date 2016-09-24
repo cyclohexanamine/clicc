@@ -1,13 +1,13 @@
 (defpackage :mac
   (:use :cl)
-  (:export :seqp :defmethod-g :mashup-symbol :mquote :eval-when-compile))
+  (:export :seqp :defmethod-g :mashup-symbol :mquote :eval-when-compile :zipcar))
 
 (defpackage :thread
   (:use :cl :mac)
   (:export :make-thread :current-thread :threadp :thread-name :newthread
            :make-lock :acquire-lock :release-lock :with-lock-held
            :threaded-object :defslotinterface :defslotints :defclass-threaded :defprocessors :with-slot :modify-slot
-           :push-queue :pop-queue :read-queue :make-processor :start-processor))
+           :push-queue :pop-queue :read-queue :make-processors :start-processors))
 
 
 (defpackage :connection

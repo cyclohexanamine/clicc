@@ -27,7 +27,8 @@
 
 (thread:defprocessors (manager tcp-connection-manager)
   ;; Connection listener; start the listener and add it to the main connection list.
-  ((progn
+  (:listener
+  (progn
     (setf (read-listener manager)
       (let ((addr (slot-value manager 'address)))
         (make-tcp-listener (usocket:socket-listen (car addr) (cadr addr)))))
@@ -45,7 +46,8 @@
   1) ; This should be unique, given that it messes around with the connection list.
   
   ;; Queue processor
-  (()
+  (:queue-processor
+  ()
   (let ((msg (thread:pop-queue manager)))
     (if msg
       (case (car msg)
