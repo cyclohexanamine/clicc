@@ -36,7 +36,6 @@
 
   ;; In the loop, wait for connection activity.
   (let ((conns (wait-for-tcp-connections manager)))
-    (write-line "Waited")
     (loop for conn in conns do
       (cond ((read-listener-p conn) ; This is a listener, so accept a new connection.
               (accept-connection manager conn))
@@ -49,12 +48,7 @@
     (thread:with-slot manager connections
       (loop for conn in connections do
         (if (and (not (read-listener-p conn)) (not (is-alive conn)))
-          (progn 
-            (write-line "Removing")
-            (remove-connection manager conn)
-          )
-          )))
-    (write-line "Pruned"))
+            (remove-connection manager conn)))))
   1) ; This should be unique, given that it messes around with the connection list.
   
   ;; Queue processor
