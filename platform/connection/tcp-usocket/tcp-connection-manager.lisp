@@ -36,13 +36,25 @@
 
   ;; In the loop, wait for connection activity.
   (let ((conns (wait-for-tcp-connections manager)))
+    (write-line "Waited")
     (loop for conn in conns do
       (cond ((read-listener-p conn) ; This is a listener, so accept a new connection.
               (accept-connection manager conn))
             ((not (is-alive conn)) ; This connection has died.
               (remove-connection manager conn))
             (T ; Otherwise, this is a normal connection, so check for a message.
-              (process-message manager conn)))))
+              (process-message manager conn))))
+    ;; Also, prune dead connections in general.
+    (write-line "Pruning")
+    (thread:with-slot manager connections
+      (loop for conn in connections do
+        (if (and (not (read-listener-p conn)) (not (is-alive conn)))
+          (progn 
+            (write-line "Removing")
+            (remove-connection manager conn)
+          )
+          )))
+    (write-line "Pruned"))
   1) ; This should be unique, given that it messes around with the connection list.
   
   ;; Queue processor
@@ -62,7 +74,7 @@
   (thread:with-slot manager wait
     (let* ((socks (thread:with-slot manager (conns 'connections)
                     (mapcar #'read-socket conns)))
-           (input-socks (usocket:wait-for-input socks :timeout 1000 :ready-only T)))
+           (input-socks (usocket:wait-for-input socks :timeout 10 :ready-only T)))
       (thread:with-slot manager (conns 'connections)
         (remove-if-not 
           (lambda (conn) (is-sock-connection-p conn input-socks))

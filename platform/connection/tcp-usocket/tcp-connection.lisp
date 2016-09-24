@@ -5,7 +5,7 @@
 (export 'tcp-connection)
 
 (defclass tcp-connection (connection)
-  
+
   ((address
     :initarg :address
     :initform '(#(0 0 0 0) 5678))
@@ -29,7 +29,7 @@
     (let ((strm (usocket:socket-stream sock)))
       (write-line message strm)
       (force-output strm))))
-        
+
 (defmethod read-message ((conn tcp-connection))
   (thread:with-slot conn (sock 'socket)
     (thread:with-slot conn buffer
@@ -58,28 +58,28 @@
   (let ((addr (list (usocket:get-local-address sock) (usocket:get-local-port sock))))
     (make-instance 'tcp-connection :address addr :socket sock :listener-p T)))
 
-;; This assumes that reading will not block (or doesn't, but will block if reading does),
-;; so only call this if we already know that the socket has new data.
+;; Checks whether the socket has been closed. This doesn't work on Windows, so later code,
+;; e.g., read-with-buffer, should account for the possibility of reading an EOF.
 (defun peek-char-eof (sock)
   (let* ((strm (usocket:socket-stream sock))
-         (char (read-char strm NIL :eof)))
-    ;; If we read EOF, return true, otherwise put back whatever we found.
+         (char (read-char-no-hang strm NIL :eof)))
     (if (eq char :eof)
       T
-      (progn (unread-char char strm) NIL))))
-      
+      ;; Put back what we read, if it wasn't EOF or NIL.
+      (if char (progn (unread-char char strm) NIL)))))
+
 ;; Read from the socket until we hit a newline. If we don't get one, store what we read in the buffer
 ;; for next time, and return NIL. If we find EOF, we return NIL.
 (defun read-with-buffer (strm buffer)
   (loop for chr = (read-char-no-hang strm NIL NIL)
     while chr
     do (case chr
-        (#\Newline (return (prog1 
+        (#\Newline (return (prog1
                             (coerce (copy-seq buffer) 'string)
                             (clear-buffer buffer))))
         (NIL (return))
         (otherwise (vector-push-extend chr buffer)))))
-        
-        
+
+
 (defun clear-buffer (buffer)
   (setf (fill-pointer buffer) 0))
