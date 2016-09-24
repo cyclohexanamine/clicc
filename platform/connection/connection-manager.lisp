@@ -14,7 +14,8 @@
    (connections
     :initform NIL)
    (message-handler
-    :initform (lambda (message data) (write-line message)))
+    :initform (lambda (message data manager) (write-line message))
+    :initarg :handler)
    (id-counter :initform 0)))
 (thread:defslotints connection-manager (connections message-handler id-counter))
 
@@ -23,10 +24,7 @@
 
 ;; The external method for queueing requests to send messages.
 (defmethod-g send-message-to ((manager connection-manager) msg criteria)
-  (thread:with-slot manager (conns 'connections)
-    (loop for conn in conns
-      if (match-connection conn criteria)
-      do (send-message conn msg))))
+  (thread:push-queue manager (list :send msg criteria)))
 
 
 
@@ -40,8 +38,9 @@
 ;; Addd the given connection (without changing its state) to the connection list,
 ;; giving it an ID.
 (defmethod-g add-connection ((manager connection-manager) conn)
-  (thread:with-slot conn data
-    (setf (get data :id) (new-id manager)))
+  (thread:modify-slot conn data
+    (setf (getf data :id) (new-id manager))
+    data)
   (thread:modify-slot manager (conns 'connections)
     (nconc conns (list conn))))
 
@@ -63,11 +62,12 @@
 ;; is calling this will likely be a worker thread.
 (defmethod-g internal-handle-message ((manager connection-manager) message data)
   (let ((handler (read-message-handler manager)))
-    (funcall handler message data)))
+    (funcall handler message data manager)))
 
 ;; Send a message msg along all the connections which match the given criteria.
 ;; This will also be called from a worker, probably.
 (defmethod-g internal-send-message-to ((manager connection-manager) msg criteria)
+  ;(write-line "Internal send message")
   (thread:with-slot manager (conns 'connections)
     (loop for conn in conns
       if (match-connection conn criteria)

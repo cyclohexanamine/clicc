@@ -32,7 +32,6 @@
 (defgeneric match-connection (conn criteria))
 (defmethod match-connection ((conn connection) criteria)
   (let ((data (read-data conn)))
-    (every #'identity
-      (loop for label in criteria
-            for val   in criteria
-         collecting (equal (get data label) val)))))
+    (every #'identity 
+      (loop for (label val) on criteria by #'cddr
+         collecting (equal (getf data label) val)))))

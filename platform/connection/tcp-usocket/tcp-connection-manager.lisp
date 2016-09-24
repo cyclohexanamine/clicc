@@ -44,7 +44,6 @@
             (T ; Otherwise, this is a normal connection, so check for a message.
               (process-message manager conn))))
     ;; Also, prune dead connections in general.
-    (write-line "Pruning")
     (thread:with-slot manager connections
       (loop for conn in connections do
         (if (and (not (read-listener-p conn)) (not (is-alive conn)))
@@ -59,8 +58,8 @@
       (case (car msg)
         (:send (internal-send-message-to manager (cadr msg) (caddr msg)))
         (:recv (internal-handle-message manager (cadr msg) (caddr msg))))
-      (sleep 0.1)))
-  5))
+      (sleep 0.05)))
+  1))
 
 ;; This wraps usocket:wait-for-input, allowing the same functionality but for connection
 ;; objects instead of sockets.
