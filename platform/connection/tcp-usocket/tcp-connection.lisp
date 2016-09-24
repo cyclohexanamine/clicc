@@ -24,7 +24,7 @@
 
 ;;; External interface
 
-(defmethod send-message ((conn tcp-connection) message &key success-callback failure-callback)
+(defmethod send-message ((conn tcp-connection) message)
   (thread:with-slot conn (sock 'socket)
     (let ((strm (usocket:socket-stream sock)))
       (write-line message strm)

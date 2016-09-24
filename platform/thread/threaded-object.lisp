@@ -34,6 +34,7 @@
 (defmethod start-processors ((obj threaded-object))
   (make-processors obj)
   (destructuring-bind (names init-funcs loop-funcs num-threads thread-lists) (zipcar (slot-value obj 'processors))
+    (declare (ignore names))
     ;; Run all the initialisations first.
     (loop for init-func in init-funcs
       do (funcall init-func))

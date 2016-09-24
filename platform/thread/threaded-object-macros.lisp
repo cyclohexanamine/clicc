@@ -49,9 +49,11 @@
 
 ;; Defines a setter for an above accessor.
 (defmacro defsetter (class-name accessor-name slot-name)
-  `(defmethod-g (setf ,accessor-name) (new-val (obj ,class-name))
-    (thread:with-slot obj (old-val ,slot-name)
-      (setf (slot-value obj ,slot-name) new-val))))
+  (let ((old-val-n (gensym)))
+    `(defmethod-g (setf ,accessor-name) (new-val (obj ,class-name))
+      (thread:with-slot obj (,old-val-n ,slot-name)
+        (declare (ignore ,old-val-n))
+        (setf (slot-value obj ,slot-name) new-val)))))
 
 ;; Defines accessor, setter and (optinally) modifier for a slot.
 (defmacro defslotinterface (class-name slot-name accessor-name)

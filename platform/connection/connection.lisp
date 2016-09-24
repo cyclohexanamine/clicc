@@ -15,8 +15,8 @@
     :initarg :data
     :initform NIL)))
 
-;; Send a message along the connection. Optional callbacks can be registered.
-(defgeneric send-message (conn message &key success-callback failure-callback))
+;; Send a message along the connection.
+(defgeneric send-message (conn messag))
 
 ;; Read a message from the connection. In some cases this may be NIL, in which case no message was read.
 (defgeneric read-message (conn))

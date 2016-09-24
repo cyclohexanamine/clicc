@@ -1,6 +1,6 @@
 (defpackage :mac
   (:use :cl)
-  (:export :seqp :defmethod-g :mashup-symbol :mquote :eval-when-compile :zipcar))
+  (:export :seqp :defmethod-g :mashup-symbol :mquote :eval-when-compile :zipcar :nullf :defnullf))
 
 (defpackage :thread
   (:use :cl :mac)

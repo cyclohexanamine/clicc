@@ -35,3 +35,10 @@
 ;; Zips a list of lists.
 (defmacro zipcar (listlist)
   `(apply #'mapcar #'list ,listlist))
+  
+(defmacro nullf (&rest args)
+  `(lambda (,@args) (declare (ignore ,@args))))
+  
+(defmacro defnullf (fname args)
+  `(defun ,fname (,@args)
+    (declare (ignore ,@args))))

@@ -65,6 +65,7 @@
 ;; objects instead of sockets.
 (defmethod-g wait-for-tcp-connections ((manager tcp-connection-manager))
   (thread:with-slot manager wait
+    (declare (ignore wait))
     (let* ((socks (thread:with-slot manager (conns 'connections)
                     (mapcar #'read-socket conns)))
            (input-socks (usocket:wait-for-input socks :timeout 10 :ready-only T)))

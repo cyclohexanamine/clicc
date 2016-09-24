@@ -14,7 +14,7 @@
    (connections
     :initform NIL)
    (message-handler
-    :initform (lambda (message data manager) (write-line message))
+    :initform (lambda (message data manager) (declare (ignore data manager)) (write-line message))
     :initarg :handler)
    (id-counter :initform 0)))
 (thread:defslotints connection-manager (connections message-handler id-counter))
@@ -33,7 +33,9 @@
 ;; Return a new ID and increment the ID counter (keeping it unique).
 (defmethod-g new-id ((manager connection-manager))
   (thread:modify-slot manager id-counter
-    (1+ id-counter)))
+    (if (integerp id-counter)
+      (1+ id-counter)
+      0)))
 
 ;; Addd the given connection (without changing its state) to the connection list,
 ;; giving it an ID.
