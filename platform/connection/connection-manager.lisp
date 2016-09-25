@@ -10,14 +10,15 @@
 ;;; gives its connections unique IDs.
 (thread:defclass-threaded connection-manager ()
   ((address
-    :initarg :address)
+    :initarg :address
+    :initform (error "connection-manager requires a local address."))
    (connections
     :initform NIL)
    (message-handler
-    :initform (lambda (message data manager) (declare (ignore data manager)) (write-line message))
-    :initarg :handler)
+    :initarg :handler
+    :initform (error "connection-manager requires a message handler."))
    (id-counter :initform 0)))
-(thread:defslotints connection-manager (connections message-handler id-counter))
+(thread:defslotints connection-manager (address connections message-handler id-counter))
 
 
 ;;; External interface

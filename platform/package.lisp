@@ -13,4 +13,4 @@
 (defpackage :connection
   (:use :cl :mac)
   (:export :connection :connection-manager
-           :send-message-to :open-connection))
+           :read-address :send-message-to :open-connection))
