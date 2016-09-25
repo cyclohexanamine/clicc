@@ -48,18 +48,19 @@
       (case (car msg)
         (:send (internal-send-message-to manager (cadr msg) (caddr msg)))
         (:recv (internal-handle-message manager (cadr msg) (caddr msg)))
-        (:open (internal-open-connection manager (cadr msg) (caddr msg))))
+        (:open (internal-open-connection manager (cadr msg) (caddr msg) (cadddr msg))))
       (sleep 0.05)))
   5))
 
 
 ;; Specialising a generic from connection-manager, to open a new connection.
-(defmethod internal-open-connection ((manager tcp-connection-manager) addr data)
-  (let* ((newsock (usocket:socket-connect (car addr) (cadr addr)))
-         (newconn (make-tcp-connection newsock)))
+(defmethod internal-open-connection ((manager tcp-connection-manager) addr data callback)
+  (let* ((newsock (usocket:socket-connect (car addr) (cadr addr))) ; Create the socket.
+         (newconn (make-tcp-connection newsock))) ; Wrap the new socket in a connection.
     (thread:modify-slot newconn (cdata 'data)
-      (nconc cdata data))
-    (add-connection manager newconn)))
+      (nconc cdata data)) ; Add the given data properties to the connection's data.
+    (add-connection manager newconn)
+    (if callback (funcall callback (read-data newconn) manager))))
 
 
 ;; This wraps usocket:wait-for-input, allowing the same functionality but for connection

@@ -30,8 +30,8 @@
 
 ;; External method for queueing a request to create a new connection (including opening it).
 ;; data is the plist to give it on creation (an ID will be added to it).
-(defmethod-g open-connection ((manager connection-manager) addr data)
-  (thread:push-queue manager (list :open addr data)))
+(defmethod-g open-connection ((manager connection-manager) addr data callback)
+  (thread:push-queue manager (list :open addr data callback)))
 
 
 ;;; Internals
@@ -82,4 +82,4 @@
       do (send-message conn msg))))
 
 ;; Create a connection to addr, and add it to the connection list.
-(defgeneric internal-open-connection (manager addr data))
+(defgeneric internal-open-connection (manager addr data callback))
