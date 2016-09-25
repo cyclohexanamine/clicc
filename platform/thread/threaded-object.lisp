@@ -14,7 +14,7 @@
 (defmethod push-queue ((obj threaded-object) msg)
   (modify-slot obj queue
     (append queue (list msg))))
-      
+
 ;; Pop a message from the front of the internal queue.
 (defgeneric pop-queue (obj))
 (defmethod pop-queue ((obj threaded-object))
@@ -38,7 +38,7 @@
     ;; Run all the initialisations first.
     (loop for init-func in init-funcs
       do (funcall init-func))
-      
+
     ;; Then start the loops.
     (loop for loop-func in loop-funcs
           for num-thread in num-threads
@@ -46,3 +46,13 @@
             (setf thread-list
               (loop repeat num-thread collecting
                 (thread:newthread funcall (lambda () (loop (funcall loop-func)))))))))
+
+;; Check whether the given message is an internal thread signal.
+(defun is-thread-sig (msg)
+)
+
+;; Handle an internal thread signal (msg) given to a threaded-object (obj).
+(defgeneric thread-handle (obj msg))
+(defmethod thread-handle ((obj threaded-object) msg)
+)
+

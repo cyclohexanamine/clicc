@@ -19,7 +19,7 @@
                           (list (car slot-def) (cadr slot-def))
                           (list slot-def (mquote slot-def)))
     `(with-recursive-lock-held ((cdr (assoc ,slot-name (slot-value ,obj 'locks))))
-      (let ((,bind-name 
+      (let ((,bind-name
               (if (slot-boundp ,obj ,slot-name)
                 (slot-value ,obj ,slot-name))))
         ,@body))))
@@ -97,41 +97,76 @@
       ,(loop for slot-name in (threaded-object-slots)
              collecting `(,slot-name :initform NIL)))
     (defslotints ,class-name ,(threaded-object-slots))))
-    
-    
+
+
 ;; Take a body form and turn it into a function to call on initialisation.
 (defmacro make-init-func (init-form)
   `(lambda () ,init-form))
-  
+
 ;; Take a body form and turn it into a function to start/loop it as a processor.
 ;; In future this should check for signals to pause/stop/start, etc.
 (defmacro make-processor-func (loop-form)
   `(lambda () (loop ,loop-form)))
 
 
-;; Builds internal processors based on a list of forms of
-;; (name init-form body-form num-threads)
-;; Each init form will be evaluated once, and each body-form will loop forever
-;; in its own thread, with num-threads separate threads for it.
-(defmacro defprocessors ((bind-name class-name) &body forms)
-  ;; First, wrap the forms given in lambdas.
-  (let ((wrapped-forms (loop for form in forms collecting
-                        `(list ,(car form)
-                               (make-init-func ,(cadr form))
-                               (make-processor-func ,(caddr form))
-                               ,(cadddr form)
-                               NIL))))
-    ;; Then define the make-processors method populating the processors slot with
-    ;; these processors.
+;; Take definitions of processors of the form
+;;  (name (:loop-func #'func-name :queue T/NIL :threads N) (:init-func #'func-name))
+;; and define the method that constructs them for start-processors to use later. Here,
+;; all of the above items, except for the name, are optional.
+(defmacro defprocessors (class-name &body forms)
+  (let ((bind-name (gensym)) ; Create a unique name for the object the processors belong to.
+        (wrapped-processors (mapcar #'create-processor forms))) ; Create the forms that will go into the object's 'processors slot.
     `(defmethod-g thread:make-processors ((,bind-name ,class-name))
-      (setf (slot-value ,bind-name 'processors)
-        (list ,@wrapped-forms)))))
+      (setf (slot-value ,bind-name 'processors) ; Put them into the slot.
+        (list ,@wrapped-processors)))))
 
 
 ;;; Some helper macros and macro functions.
+
+;; Given a processor definition (see comment for defprocessors), construct the form
+;; that will end up as an item in the object's 'processors slot. bind-name is the name of the 
+;; object that this processor belongs to.
+(defun create-processor (proc-form bind-name)
+  (let* (;; Options for initialisation forms.
+         (init-form (find-car :init-func proc-form))
+         (init-func (getf init-form :init-func)) ; Function to call on initialisation.
+         ;; Options for the main loop body of the processor.
+         (loop-form (find-car :loop-func proc-form))
+         (loop-func (getf loop-form :loop-func)) ; Function to call per loop.
+         (should-queue (getf loop-form :queue NIL) ; Whether this function takes a message from the queue.
+         (thread-no (getf loop-form :threads 1)))) ; How many threads should there be in the thread pool?
+    ;; Create the form itself.
+    `(list ,(car proc-form) ; Name of the processor.
+           NIL ; The processor's queue, currently empty.
+           ,(create-loop-func loop-func bind-name should-queue) ; The loop function, in a form that can be called once.
+           NIL ; The processor's thread list, currently empty.
+           ,(if loop-form thread-no 0) ; The number of threads, or 0 if there's no loop function.
+           ,(create-init-func init-func bind-name) ; The initialisation function.
+    )))
+
+;; Given a function to call per loop, and whether it takes a queue message, construct a
+;; function that can be called once to run it indefinitely. This function will check the
+;; associated queue for internal signals. If the processor itself is a queue consumer
+;; (if should-queue), then it should wait for a message anyway, and will be passed one meant
+;; for it. If not, it will loop as fast as it can, and won't be passed any messages.
+(defun create-loop-func (loop-func bind-name should-queue)
+  `(lambda () ,(if loop-func
+                `(loop for msg = (pop-queue ,bind-name ',pname :wait ,should-queue) do
+                  (if (is-thread-sig msg)
+                    (thread-handle ,bind-name msg)
+                    (apply ,loop-func ,bind-name ,@(if should-queue '(msg))))))))
+
+;; Create an initialisation function, given the function. Will be a null function if 
+;; init-func is NIL. 
+(defun create-init-func (init-func bind-name)
+  `(lambda () ,(if init-func `(lambda () (apply ,init-func ,bind-name)))))
+
 
 (defun get-slot-names (slots)
   (loop for slot in slots
     collecting (if (consp slot)
                   (car slot)
                   slot)))
+
+(defun find-car (list-in match)
+  (find (lambda (form) (and (consp form) (eq (car form) match))) list-in))
