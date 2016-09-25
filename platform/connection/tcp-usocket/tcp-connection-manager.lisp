@@ -13,16 +13,6 @@
 (thread:defslotints tcp-connection-manager (wait listener))
 
 
-;;; External interface
-
-;; Given a listener 'conn', this will create and add a new connection from whoever
-;; has connected to the listener socket. This will block if there are no new connections.
-(defmethod-g accept-connection ((manager tcp-connection-manager) conn)
-  (let* ((listener (read-socket conn))
-         (new-conn (usocket:socket-accept listener)))
-    (add-connection manager (make-tcp-connection new-conn))))
-
-
 ;;; Internals
 
 (thread:defprocessors (manager tcp-connection-manager)
@@ -57,15 +47,26 @@
     (if msg
       (case (car msg)
         (:send (internal-send-message-to manager (cadr msg) (caddr msg)))
-        (:recv (internal-handle-message manager (cadr msg) (caddr msg))))
+        (:recv (internal-handle-message manager (cadr msg) (caddr msg)))
+        (:open (internal-open-connection manager (cadr msg) (caddr msg))))
       (sleep 0.05)))
-  1))
+  5))
+
+
+;; Specialising a generic from connection-manager, to open a new connection.
+(defmethod internal-open-connection ((manager tcp-connection-manager) addr data)
+  (let* ((newsock (usocket:socket-connect (car addr) (cadr addr)))
+         (newconn (make-tcp-connection newsock)))
+    (thread:modify-slot newconn (cdata 'data)
+      (nconc cdata data))
+    (add-connection manager newconn)))
+
 
 ;; This wraps usocket:wait-for-input, allowing the same functionality but for connection
-;; objects instead of sockets.
+;; objects instead of sockets. It's safe to modify the connection list while another thread
+;; is waiting on connections, but two shouldn't be at once (hence the 'wait' lock).
 (defmethod-g wait-for-tcp-connections ((manager tcp-connection-manager))
-  (thread:with-slot manager wait
-    (declare (ignore wait))
+  (thread:with-slot-lock manager wait
     (let* ((socks (thread:with-slot manager (conns 'connections)
                     (mapcar #'read-socket conns)))
            (input-socks (usocket:wait-for-input socks :timeout 10 :ready-only T)))
@@ -73,6 +74,13 @@
         (remove-if-not 
           (lambda (conn) (is-sock-connection-p conn input-socks))
           conns)))))
+
+;; Given a listener 'conn', this will create and add a new connection from whoever
+;; has connected to the listener socket. This will block if there are no new connections.
+(defmethod-g accept-connection ((manager tcp-connection-manager) conn)
+  (let* ((listener (read-socket conn))
+         (new-conn (usocket:socket-accept listener)))
+    (add-connection manager (make-tcp-connection new-conn))))
 
 (defun is-sock-connection-p (conn socks)
   (member (read-socket conn) socks))

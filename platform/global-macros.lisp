@@ -35,7 +35,8 @@
 ;; Zips a list of lists.
 (defmacro zipcar (listlist)
   `(apply #'mapcar #'list ,listlist))
-  
+
+;; Null functions, swallowing all their arguments and doing nothing.
 (defmacro nullf (&rest args)
   `(lambda (,@args) (declare (ignore ,@args))))
   

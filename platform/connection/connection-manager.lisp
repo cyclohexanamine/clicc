@@ -23,9 +23,15 @@
 ;;; External interface
 
 ;; The external method for queueing requests to send messages.
+;; Criteria is a plist of criteria to select the connections by; making sure all values
+;; match the ones in the connection's data plist.
 (defmethod-g send-message-to ((manager connection-manager) msg criteria)
   (thread:push-queue manager (list :send msg criteria)))
 
+;; External method for queueing a request to create a new connection (including opening it).
+;; data is the plist to give it on creation (an ID will be added to it).
+(defmethod-g open-connection ((manager connection-manager) addr data)
+  (thread:push-queue manager (list :open addr data)))
 
 
 ;;; Internals
@@ -69,10 +75,11 @@
 ;; Send a message msg along all the connections which match the given criteria.
 ;; This will also be called from a worker, probably.
 (defmethod-g internal-send-message-to ((manager connection-manager) msg criteria)
-  ;(write-line "Internal send message")
   (thread:with-slot manager (conns 'connections)
     (loop for conn in conns
       if (match-connection conn criteria)
+      if (not (read-listener-p conn))
       do (send-message conn msg))))
 
-
+;; Create a connection to addr, and add it to the connection list.
+(defgeneric internal-open-connection (manager addr data))

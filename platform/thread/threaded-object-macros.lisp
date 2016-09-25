@@ -24,6 +24,12 @@
                 (slot-value ,obj ,slot-name))))
         ,@body))))
 
+;; For the case of holding a lock for a slot but not using the value.
+(defmacro with-slot-lock (obj slot-name &body body)
+  `(with-slot ,obj ,slot-name
+    (declare (ignore ,slot-name))
+    ,@body))
+
 ;; Defines a read-and-set macro for a slot, in the form of, e.g.,
 ;;  (modify-slot classabc (xyzval 'xyz)
 ;;    (do-something xyz)
