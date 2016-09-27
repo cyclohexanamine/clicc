@@ -4,7 +4,11 @@
 
 ;; The generic threaded object slots.
 (defmacro threaded-object-slots ()
-  ''(threads queue locks processors))
+  ''(processors locks))
+
+;; The possible messages to be sent via a message queue internally.
+(defmacro threaded-object-msgs ()
+  ''(:thread-internal-stop))
 
 
 ;;; Macros for interface definitions.
@@ -43,6 +47,22 @@
   `(with-slot ,obj ,slot-def
     (setf (slot-value ,obj ,slot-name)
       (progn ,@body)))))
+
+;; Wraps finding the queue of a particular processor (proc-name), binding it to queue-name.
+(defmacro modify-queue (obj (queue-name proc-name) &body body)
+  (let ((processors-sym (gensym))
+        (proc-sym (gensym)))
+    `(with-slot ,obj (,processors-sym 'thread::processors)
+      ;; Find the processor list whose name (first element) is proc-name,
+      (let* ((,proc-sym (find-if (lambda (,proc-sym) (equal (car ,proc-sym) ,proc-name)) ,processors-sym))
+             ;; and its queue (second element).
+             (,queue-name (if ,proc-sym (cadr ,proc-sym))))
+        (if ,proc-sym
+          ;; Execute the body.
+          (setf (cadr ,proc-sym) (progn ,@body))
+          ;; Throw an error if we didn't find the queue
+          (error (format NIL "Queue for processor ~a not found" ,proc-name)))))))
+
 
 ;; Defines thread-safe accessors for object slots, based on with-slot.
 (defmacro defaccessor (class-name accessor-name slot-name)
@@ -112,33 +132,37 @@
 ;; Take definitions of processors of the form
 ;;  (name (:loop-func #'func-name :queue T/NIL :threads N) (:init-func #'func-name))
 ;; and define the method that constructs them for start-processors to use later. Here,
-;; all of the above items, except for the name, are optional.
+;; all of the above items, except for the name, are optional. The form for a processor
+;; in the 'processors slot is
+;;  (name queue loop-func thread-list num-threads init-func)
 (defmacro defprocessors (class-name &body forms)
-  (let ((bind-name (gensym)) ; Create a unique name for the object the processors belong to.
-        (wrapped-processors (mapcar #'create-processor forms))) ; Create the forms that will go into the object's 'processors slot.
+  (let* ((bind-name (gensym)) ; Create a unique name for the object the processors belong to.
+         (create-proc (lambda (form) (create-processor form bind-name)))
+         (wrapped-processors (mapcar create-proc forms))) ; Create the forms that will go into the object's 'processors slot.
     `(defmethod-g thread:make-processors ((,bind-name ,class-name))
       (setf (slot-value ,bind-name 'processors) ; Put them into the slot.
         (list ,@wrapped-processors)))))
 
 
-;;; Some helper macros and macro functions.
+;;; Some helper functions for the above macros.
 
 ;; Given a processor definition (see comment for defprocessors), construct the form
-;; that will end up as an item in the object's 'processors slot. bind-name is the name of the 
-;; object that this processor belongs to.
+;; that will end up as an item in the object's 'processors slot. bind-name is the name of the
+;; object that this processor belongs to. 
 (defun create-processor (proc-form bind-name)
   (let* (;; Options for initialisation forms.
+         (pname (car proc-form)) ; The name of the processor.
          (init-form (find-car :init-func proc-form))
          (init-func (getf init-form :init-func)) ; Function to call on initialisation.
          ;; Options for the main loop body of the processor.
          (loop-form (find-car :loop-func proc-form))
          (loop-func (getf loop-form :loop-func)) ; Function to call per loop.
-         (should-queue (getf loop-form :queue NIL) ; Whether this function takes a message from the queue.
-         (thread-no (getf loop-form :threads 1)))) ; How many threads should there be in the thread pool?
+         (should-queue (getf loop-form :queue NIL)) ; Whether this function takes a message from the queue.
+         (thread-no (getf loop-form :threads 1))) ; How many threads should there be in the thread pool?
     ;; Create the form itself.
-    `(list ,(car proc-form) ; Name of the processor.
+    `(list ',pname ; Name of the processor.
            NIL ; The processor's queue, currently empty.
-           ,(create-loop-func loop-func bind-name should-queue) ; The loop function, in a form that can be called once.
+           ,(create-loop-func loop-func pname bind-name should-queue) ; The loop function, in a form that can be called once.
            NIL ; The processor's thread list, currently empty.
            ,(if loop-form thread-no 0) ; The number of threads, or 0 if there's no loop function.
            ,(create-init-func init-func bind-name) ; The initialisation function.
@@ -149,17 +173,28 @@
 ;; associated queue for internal signals. If the processor itself is a queue consumer
 ;; (if should-queue), then it should wait for a message anyway, and will be passed one meant
 ;; for it. If not, it will loop as fast as it can, and won't be passed any messages.
-(defun create-loop-func (loop-func bind-name should-queue)
+(defun create-loop-func (loop-func pname bind-name should-queue)
   `(lambda () ,(if loop-func
-                `(loop for msg = (pop-queue ,bind-name ',pname :wait ,should-queue) do
+                `(loop named outer-thread-loop
+                  for msg = (pop-queue ,bind-name ',pname :wait ,should-queue) do
                   (if (is-thread-sig msg)
-                    (thread-handle ,bind-name msg)
-                    (apply ,loop-func ,bind-name ,@(if should-queue '(msg))))))))
+                    ,(thread-handle 'msg)
+                    (funcall ,loop-func ,bind-name ,@(if should-queue '(msg))))))))
 
-;; Create an initialisation function, given the function. Will be a null function if 
-;; init-func is NIL. 
+;; Check whether the given message is an internal thread signal.
+(defun is-thread-sig (msg)
+  (member (car msg) (threaded-object-msgs)))
+
+;; Handle an internal thread signal (msg) given to a threaded-object (obj).
+(defun thread-handle (msg)
+  `(case (car ,msg)
+    ;; Return from the enclosing loop, terminating the thread.
+    (:thread-internal-stop (return-from outer-thread-loop))))
+
+;; Create an initialisation function, given the function. Will be a null function if
+;; init-func is NIL.
 (defun create-init-func (init-func bind-name)
-  `(lambda () ,(if init-func `(lambda () (apply ,init-func ,bind-name)))))
+  `(lambda () ,(if init-func `(funcall ,init-func ,bind-name))))
 
 
 (defun get-slot-names (slots)
@@ -168,5 +203,5 @@
                   (car slot)
                   slot)))
 
-(defun find-car (list-in match)
-  (find (lambda (form) (and (consp form) (eq (car form) match))) list-in))
+(defun find-car (match list-in)
+  (find-if (lambda (form) (and (consp form) (eq (car form) match))) list-in))

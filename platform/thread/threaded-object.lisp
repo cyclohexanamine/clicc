@@ -3,26 +3,33 @@
 (in-package :thread)
 
 
-;;; The object itself. Thread will be its internal thread, and queue a message queue for this thread.
-;;; Locks is an alist of locks made by (thread:make-recursive-lock), with names corresponding to the slots they protect.
+;;; The object itself.
 
 (defclass-with-slots threaded-object ())
 
 
-;; Push a message to the back of the internal queue.
-(defgeneric push-queue (obj msg))
-(defmethod push-queue ((obj threaded-object) msg)
-  (modify-slot obj queue
+;; Push a message to the back of an internal queue.
+(defgeneric push-queue (obj proc-name msg))
+(defmethod push-queue ((obj threaded-object) proc-name msg)
+  (modify-queue obj (queue proc-name)
+    ;; Append the message to the queue.
     (append queue (list msg))))
 
 ;; Pop a message from the front of the internal queue.
-(defgeneric pop-queue (obj))
-(defmethod pop-queue ((obj threaded-object))
-  (with-slot obj queue
-    (let* ((msg (car queue))
-           (new-queue (cdr queue)))
-      (setf (slot-value obj 'queue) new-queue)
-      msg)))
+(defgeneric pop-queue (obj proc-name &key wait))
+(defmethod pop-queue ((obj threaded-object) proc-name &key wait)
+  ;; Block until the queue is not empty, if we should.
+  (if wait
+    ;; A simple spinlock.
+    (loop while (not (modify-queue obj (queue proc-name) queue))
+      do (sleep 0.01)))
+  (let ((msg))
+    (modify-queue obj (queue proc-name)
+      ;; Take the front and rest of the queue.
+      (setf msg (car queue))
+      (cdr queue))
+    msg))
+
 
 ;; Methods for this are defined by defprocessors. When called, this will populate the object's
 ;; 'processors' slot with a list of processors of the form
@@ -33,11 +40,15 @@
 (defgeneric start-processors (obj))
 (defmethod start-processors ((obj threaded-object))
   (make-processors obj)
-  (destructuring-bind (names init-funcs loop-funcs num-threads thread-lists) (zipcar (slot-value obj 'processors))
+  (destructuring-bind (names queues loop-funcs thread-lists num-threads init-funcs) (zipcar (slot-value obj 'processors))
     (declare (ignore names))
-    ;; Run all the initialisations first.
-    (loop for init-func in init-funcs
-      do (funcall init-func))
+    ;; Clear all the queues.
+    (loop for queue in queues do
+      (setf queue NIL))
+
+    ;; Run all the initialisations.
+    (loop for init-func in init-funcs do
+      (funcall init-func))
 
     ;; Then start the loops.
     (loop for loop-func in loop-funcs
@@ -45,14 +56,5 @@
           for thread-list in thread-lists do
             (setf thread-list
               (loop repeat num-thread collecting
-                (thread:newthread funcall (lambda () (loop (funcall loop-func)))))))))
-
-;; Check whether the given message is an internal thread signal.
-(defun is-thread-sig (msg)
-)
-
-;; Handle an internal thread signal (msg) given to a threaded-object (obj).
-(defgeneric thread-handle (obj msg))
-(defmethod thread-handle ((obj threaded-object) msg)
-)
+                (thread:newthread funcall loop-func))))))
 

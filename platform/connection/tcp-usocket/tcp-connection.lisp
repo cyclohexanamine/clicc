@@ -5,7 +5,6 @@
 (export 'tcp-connection)
 
 (defclass tcp-connection (connection)
-
   ((address
     :initarg :address
     :initform '(#(0 0 0 0) 5678))
@@ -19,6 +18,7 @@
    (listener-p
     :initarg :listener-p
     :initform NIL)))
+
 (thread:defslotints tcp-connection (socket buffer listener-p))
 
 

@@ -27,12 +27,12 @@
 ;; Criteria is a plist of criteria to select the connections by; making sure all values
 ;; match the ones in the connection's data plist.
 (defmethod-g send-message-to ((manager connection-manager) msg criteria)
-  (thread:push-queue manager (list :send msg criteria)))
+  (thread:push-queue manager 'main (list :send msg criteria)))
 
 ;; External method for queueing a request to create a new connection (including opening it).
 ;; data is the plist to give it on creation (an ID will be added to it).
 (defmethod-g open-connection ((manager connection-manager) addr data callback)
-  (thread:push-queue manager (list :open addr data callback)))
+  (thread:push-queue manager 'main (list :open addr data callback)))
 
 
 ;;; Internals
@@ -65,7 +65,7 @@
 (defmethod-g process-message ((manager connection-manager) conn)
   (let ((message (read-message conn)))
     (if message
-      (thread:push-queue manager (list :recv message (read-data conn))))))
+      (thread:push-queue manager 'main (list :recv message (read-data conn))))))
 
 ;; Call the handler on the given message; this isn't in a new thread, so whatever
 ;; is calling this will likely be a worker thread.
