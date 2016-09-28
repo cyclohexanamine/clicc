@@ -59,13 +59,12 @@
     (remove conn conns))
   (close-connection conn))
 
-;; Check whether there's a message to get from the connection, and if there is,
-;; queue up to call the handler on it. This should probably only be used when the
-;; connection has been reported as active, although not necessarily.
+;; Check whether there are messages to get from the connection, and if there are,
+;; queue up to call the handler on them.
 (defmethod-g process-message ((manager connection-manager) conn)
-  (let ((message (read-message conn)))
-    (if message
-      (thread:push-queue manager 'main (list :recv message (read-data conn))))))
+  (loop for message = (read-message conn)
+    while message do
+      (thread:push-queue manager 'main (list :recv message (read-data conn)))))
 
 ;; Call the handler on the given message; this isn't in a new thread, so whatever
 ;; is calling this will likely be a worker thread.

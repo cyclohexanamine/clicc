@@ -13,9 +13,9 @@
 (thread:defslotints tcp-connection-manager (wait listener))
 
 
-;;; Internals
+;;; Internal processors
 
-;; This loop listens for activity 
+;; This loop listens for activity on open connections, and prunes dead connections.
 (defun listener-loop (manager)
   ;; In the loop, wait for connection activity.
   (let ((conns (wait-for-tcp-connections manager)))
@@ -39,26 +39,28 @@
       (make-tcp-listener (usocket:socket-listen (car addr) (cadr addr)))))
   (add-connection manager (read-listener manager)))
 
+;; Here we handle messages in the main message queue:
+;;  send message, receive message, open connection.
 (defun queue-loop (manager msg)
   (case (car msg)
     (:send (internal-send-message-to manager (cadr msg) (caddr msg)))
     (:recv (internal-handle-message manager (cadr msg) (caddr msg)))
     (:open (internal-open-connection manager (cadr msg) (caddr msg) (cadddr msg)))))
 
+;; Define the internal processors, using the functions above.
 (thread:defprocessors tcp-connection-manager
   ;; Connection listener
-  (listener
-    (:loop-func #'listener-loop
-                :queue NIL
-                :threads 1); This should be unique, given that it messes around with the connection list.
+  (listener (:loop-func #'listener-loop
+              :queue NIL ; Don't receive messages, since we want to always be listening to connections.
+              :threads 1)
     (:init-func #'listener-init))
-
   ;; Main queue processor
-  (main
-    (:loop-func #'queue-loop
-                :queue T
-                :threads 5)))
+  (main (:loop-func #'queue-loop
+          :queue T ; Receive messages from the 'main queue.
+          :threads 5)))
 
+
+;;; Other internals
 
 ;; Specialising a generic from connection-manager, to open a new connection.
 (defmethod internal-open-connection ((manager tcp-connection-manager) addr data callback)
@@ -85,10 +87,14 @@
 
 ;; Given a listener 'conn', this will create and add a new connection from whoever
 ;; has connected to the listener socket. This will block if there are no new connections.
+;; Because the connection may have sent data before we've accepted, we also call
+;; process-message on it to get any messages that may be hiding there.
 (defmethod-g accept-connection ((manager tcp-connection-manager) conn)
   (let* ((listener (read-socket conn))
-         (new-conn (usocket:socket-accept listener)))
-    (add-connection manager (make-tcp-connection new-conn))))
+         (new-sock (usocket:socket-accept listener))
+         (new-conn (make-tcp-connection new-sock)))
+    (add-connection manager new-conn)
+    (process-message manager new-conn)))
 
 (defun is-sock-connection-p (conn socks)
   (member (read-socket conn) socks))
