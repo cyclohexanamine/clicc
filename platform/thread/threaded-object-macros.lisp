@@ -148,7 +148,7 @@
 
 ;; Given a processor definition (see comment for defprocessors), construct the form
 ;; that will end up as an item in the object's 'processors slot. bind-name is the name of the
-;; object that this processor belongs to. 
+;; object that this processor belongs to.
 (defun create-processor (proc-form bind-name)
   (let* (;; Options for initialisation forms.
          (pname (car proc-form)) ; The name of the processor.

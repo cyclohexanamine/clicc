@@ -31,7 +31,7 @@
 (defmacro eval-when-compile (&body body)
   `(eval-when (:load-toplevel :compile-toplevel :execute)
      ,@body))
-     
+
 ;; Zips a list of lists.
 (defmacro zipcar (listlist)
   `(apply #'mapcar #'list ,listlist))
@@ -39,7 +39,7 @@
 ;; Null functions, swallowing all their arguments and doing nothing.
 (defmacro nullf (&rest args)
   `(lambda (,@args) (declare (ignore ,@args))))
-  
+
 (defmacro defnullf (fname args)
   `(defun ,fname (,@args)
     (declare (ignore ,@args))))

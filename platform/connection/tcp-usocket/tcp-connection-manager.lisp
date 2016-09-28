@@ -33,7 +33,7 @@
   (setf (read-listener manager)
     (let ((addr (slot-value manager 'address)))
       (make-tcp-listener (usocket:socket-listen (car addr) (cadr addr))))))
-      
+
 ;; This loop listens for incoming connections and adds them as they come.
 (defun listener-loop (manager)
   (accept-connection manager (read-listener manager)))

@@ -20,7 +20,7 @@
 
 ;; Read a message from the connection. In some cases this may be NIL, in which case no message was read.
 (defgeneric read-message (conn))
-  
+
 ;; Is the connection still alive in whatever sense?
 (defgeneric is-alive (conn))
 
@@ -32,6 +32,6 @@
 (defgeneric match-connection (conn criteria))
 (defmethod match-connection ((conn connection) criteria)
   (let ((data (read-data conn)))
-    (every #'identity 
+    (every #'identity
       (loop for (label val) on criteria by #'cddr
          collecting (equal (getf data label) val)))))

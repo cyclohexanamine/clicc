@@ -3,7 +3,7 @@
 (in-package :thread)
 
 (shadowing-import '(bordeaux-threads:make-thread bordeaux-threads:make-recursive-lock bordeaux-threads:with-recursive-lock-held))
-          
+
 (defmacro newthread (fname &rest args)
   `(make-thread
     (lambda ()
