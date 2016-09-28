@@ -48,20 +48,23 @@
     (setf (slot-value ,obj ,slot-name)
       (progn ,@body)))))
 
-;; Wraps finding the queue of a particular processor (proc-name), binding it to queue-name.
-(defmacro modify-queue (obj (queue-name proc-name) &body body)
-  (let ((processors-sym (gensym))
-        (proc-sym (gensym)))
+;; Wraps finding a particular processor (proc-name), binding it to proc-sym.
+(defmacro with-processor (obj (proc-sym proc-name) &body body)
+  (let ((processors-sym (gensym)))
     `(with-slot ,obj (,processors-sym 'thread::processors)
-      ;; Find the processor list whose name (first element) is proc-name,
-      (let* ((,proc-sym (find-if (lambda (,proc-sym) (equal (car ,proc-sym) ,proc-name)) ,processors-sym))
-             ;; and its queue (second element).
-             (,queue-name (if ,proc-sym (cadr ,proc-sym))))
+      ;; Find the processor list whose name (first element) is proc-name.
+      (let ((,proc-sym (find-if (lambda (,proc-sym) (equal (car ,proc-sym) ,proc-name)) ,processors-sym)))
         (if ,proc-sym
+          (progn ,@body)
+          (error (format NIL "Processor ~a not found for object ~a" ,proc-name ,obj)))))))
+
+;; Wraps modifying the queue of a particular processor (proc-name), binding it to queue-name; the value of the final body form will be set as the value of the queue.
+(defmacro modify-queue (obj (queue-name proc-name) &body body)
+  (let ((proc-sym (gensym)))
+    `(with-processor ,obj (,proc-sym ,proc-name)
+        (let ((,queue-name (cadr ,proc-sym)))
           ;; Execute the body.
-          (setf (cadr ,proc-sym) (progn ,@body))
-          ;; Throw an error if we didn't find the queue
-          (error (format NIL "Queue for processor ~a not found" ,proc-name)))))))
+          (setf (cadr ,proc-sym) (progn ,@body))))))
 
 
 ;; Defines thread-safe accessors for object slots, based on with-slot.
