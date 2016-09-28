@@ -173,13 +173,17 @@
 ;; associated queue for internal signals. If the processor itself is a queue consumer
 ;; (if should-queue), then it should wait for a message anyway, and will be passed one meant
 ;; for it. If not, it will loop as fast as it can, and won't be passed any messages.
+;;  Any errors in the loop function itself will be printed to the console and then subsequently
+;; ignored, for the sake of the processor staying alive.
 (defun create-loop-func (loop-func pname bind-name should-queue)
-  `(lambda () ,(if loop-func
-                `(loop named outer-thread-loop
-                  for msg = (pop-queue ,bind-name ',pname :wait ,should-queue) do
-                  (if (is-thread-sig msg)
-                    ,(thread-handle 'msg)
-                    (funcall ,loop-func ,bind-name ,@(if should-queue '(msg))))))))
+  `(lambda ()
+    ,(if loop-func
+      `(loop named outer-thread-loop
+        for msg = (pop-queue ,bind-name ',pname :wait ,should-queue) do
+        (if (is-thread-sig msg)
+          ,(thread-handle 'msg)
+          (handler-case (funcall ,loop-func ,bind-name ,@(if should-queue '(msg)))
+            (error (condition) (write-line (format NIL "Error in processor ~S: ~S" ',pname condition)))))))))
 
 ;; Check whether the given message is an internal thread signal.
 (defun is-thread-sig (msg)
