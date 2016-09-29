@@ -55,11 +55,9 @@
     ;; Clear all the queues.
     (loop for queue in queues do
       (setf queue NIL))
-
     ;; Run all the initialisations.
     (loop for init-func in init-funcs do
       (funcall init-func))
-
     ;; Then start the loops.
     (loop for proc-name in names do
       (start-processor obj proc-name))))
@@ -83,6 +81,13 @@
           ;; Start a new thread with the loop function.
           (thread:newthread funcall loop-func)))
       (setf (nth 4 proc) num-thread)))) ; Overwrite the number of threads.
+
+;; Stop all threads of all processors belonging to the object
+;; using stop-processor.
+(defgeneric stop-processors (obj))
+(defmethod stop-processors ((obj threaded-object))
+  (let ((pnames (mapcar #'car (slot-value obj 'processors))))
+    (mapcar (lambda (pname) (stop-processor obj pname)) pnames)))
 
 ;; Stop all threads of the processor with the name pname. This assumes
 ;; that they are all already running, and does not take effect immediately;

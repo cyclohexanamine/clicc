@@ -7,7 +7,7 @@
   (:export :newthread
            :threaded-object :defslotinterface :defslotints :defclass-threaded :defprocessors :with-slot :with-slot-lock :modify-slot
            :push-queue :pop-queue :peek-queue :read-queue
-           :make-processors :start-processors :start-processor :stop-processor))
+           :make-processors :start-processors :start-processor :stop-processors :stop-processor))
 
 
 (defpackage :connection
