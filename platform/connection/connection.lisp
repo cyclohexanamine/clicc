@@ -13,7 +13,7 @@
     :initarg :address)
    (data
     :initarg :data
-    :initform NIL)))
+    :initform nil)))
 
 ;; Send a message along the connection.
 (defgeneric send-message (conn messag))

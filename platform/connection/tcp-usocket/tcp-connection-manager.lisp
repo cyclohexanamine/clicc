@@ -50,12 +50,12 @@
 (thread:defprocessors tcp-connection-manager
   ;; New connection listener
   (listener (:loop-func #'listener-loop
-              :queue NIL
+              :queue nil
               :threads 1)
     (:init-func #'listener-init))
   ;; Open connections listener
   (connections (:loop-func #'connections-loop
-              :queue NIL
+              :queue nil
               :threads 2))
   ;; Main queue processor
   (main (:loop-func #'queue-loop

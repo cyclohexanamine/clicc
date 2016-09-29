@@ -54,7 +54,7 @@
     (declare (ignore loop-funcs thread-lists num-threads))
     ;; Clear all the queues.
     (loop for queue in queues do
-      (setf queue NIL))
+      (setf queue nil))
     ;; Run all the initialisations.
     (loop for init-func in init-funcs do
       (funcall init-func))

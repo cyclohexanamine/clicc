@@ -13,7 +13,7 @@
     :initarg :address
     :initform (error "connection-manager requires a local address."))
    (connections
-    :initform NIL)
+    :initform nil)
    (message-handler
     :initarg :handler
     :initform (error "connection-manager requires a message handler."))

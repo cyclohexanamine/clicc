@@ -10,14 +10,14 @@
     :initform '(#(0 0 0 0) 5678))
    (socket
     :initarg :socket
-    :initform NIL)
+    :initform nil)
    ;; Array of characters to buffer before newline
    (buffer
     :initform (make-array 1 :fill-pointer 0))
    ;; Is this connection a listener?
    (listener-p
     :initarg :listener-p
-    :initform NIL)))
+    :initform nil)))
 
 (thread:defslotints tcp-connection (socket buffer listener-p))
 
@@ -62,22 +62,22 @@
 ;; e.g., read-with-buffer, should account for the possibility of reading an EOF.
 (defun peek-char-eof (sock)
   (let* ((strm (usocket:socket-stream sock))
-         (char (read-char-no-hang strm NIL :eof)))
+         (char (read-char-no-hang strm nil :eof)))
     (if (eq char :eof)
       T
       ;; Put back what we read, if it wasn't EOF or NIL.
-      (if char (progn (unread-char char strm) NIL)))))
+      (if char (progn (unread-char char strm) nil)))))
 
 ;; Read from the socket until we hit a newline. If we don't get one, store what we read in the buffer
 ;; for next time, and return NIL. If we find EOF, we return NIL.
 (defun read-with-buffer (strm buffer)
-  (loop for chr = (read-char-no-hang strm NIL NIL)
+  (loop for chr = (read-char-no-hang strm nil nil)
     while chr
     do (case chr
         (#\Newline (return (prog1
                             (coerce (copy-seq buffer) 'string)
                             (clear-buffer buffer))))
-        (NIL (return))
+        (nil (return))
         (otherwise (vector-push-extend chr buffer)))))
 
 

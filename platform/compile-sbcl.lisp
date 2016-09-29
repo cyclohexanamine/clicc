@@ -3,10 +3,10 @@
 (asdf:load-system :unix-options)
 (use-package :unix-options)
 
-(defparameter *cm* NIL)
+(defparameter *cm* nil)
 
 (defun echo-handler (message data manager)
-  (connection:send-message-to manager (format NIL "Echoing: ~a" message) (list :id (getf data :id))))
+  (connection:send-message-to manager (format nil "Echoing: ~a" message) (list :id (getf data :id))))
 
 (mac:defnullf nil-handler (message data manager))
 
@@ -22,7 +22,7 @@
 
 
 (defun run-repl ()
-  (format t "~&CLICC REPL~%Compiled with ~a ~a~%"
+  (format T "~&CLICC REPL~%Compiled with ~a ~a~%"
           (lisp-implementation-type)
           (lisp-implementation-version))
   (sb-thread:with-new-session ()
@@ -42,7 +42,7 @@
       (exit ()
         (progn
           (stop-manager)
-          (sb-ext:exit :abort NIL :timeout 20))))))
+          (sb-ext:exit :abort nil :timeout 20))))))
 
 
 (sb-ext:save-lisp-and-die "platform.exe" :toplevel #'main :executable T)

@@ -56,7 +56,7 @@
       (let ((,proc-sym (find-if (lambda (,proc-sym) (equal (car ,proc-sym) ,proc-name)) ,processors-sym)))
         (if ,proc-sym
           (progn ,@body)
-          (error (format NIL "Processor ~a not found for object ~a" ,proc-name ,obj)))))))
+          (error (format nil "Processor ~a not found for object ~a" ,proc-name ,obj)))))))
 
 ;; Wraps modifying the queue of a particular processor (proc-name), binding it to queue-name; the value of the final body form will be set as the value of the queue.
 (defmacro modify-queue (obj (queue-name proc-name) &body body)
@@ -123,7 +123,7 @@
   `(progn
     (defclass ,class-name ,parents
       ,(loop for slot-name in (threaded-object-slots)
-             collecting `(,slot-name :initform NIL)))
+             collecting `(,slot-name :initform nil)))
     (defslotints ,class-name ,(threaded-object-slots))))
 
 
@@ -165,13 +165,13 @@
          ;; Options for the main loop body of the processor.
          (loop-form (find-car :loop-func proc-form))
          (loop-func (getf loop-form :loop-func)) ; Function to call per loop.
-         (should-queue (getf loop-form :queue NIL)) ; Whether this function takes a message from the queue.
+         (should-queue (getf loop-form :queue nil)) ; Whether this function takes a message from the queue.
          (thread-no (getf loop-form :threads 1))) ; How many threads should there be in the thread pool?
     ;; Create the form itself.
     `(list ',pname ; Name of the processor.
-           NIL ; The processor's queue, currently empty.
+           nil ; The processor's queue, currently empty.
            ,(create-loop-func loop-func pname bind-name should-queue) ; The loop function, in a form that can be called once.
-           NIL ; The processor's thread list, currently empty.
+           nil ; The processor's thread list, currently empty.
            ,(if loop-form thread-no 0) ; The number of threads, or 0 if there's no loop function.
            ,(create-init-func init-func bind-name) ; The initialisation function.
     )))
@@ -191,7 +191,7 @@
         (if (is-thread-sig msg)
           ,(thread-handle 'msg)
           (handler-case (funcall ,loop-func ,bind-name ,@(if should-queue '(msg)))
-            (error (condition) (write-line (format NIL "Error in processor ~S: ~S" ',pname condition)))))))))
+            (error (condition) (write-line (format nil "Error in processor ~S: ~S" ',pname condition)))))))))
 
 ;; Check whether the given message is an internal thread signal.
 (defun is-thread-sig (msg)
