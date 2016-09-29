@@ -104,13 +104,18 @@
 ;; Generic interfaces with default names (read-slot) for all the slots in slot-names.
 (defmacro defslotints (class-name slot-names)
   `(progn
+    ;; Define the default interface for each slot given.
     ,@(loop for slot-name in slot-names collecting
       `(defslotinterface ,class-name ,slot-name ,(mashup-symbol 'read- slot-name)))
+    ;; Create all the locks for the given slots on initialisation.
     (defmethod initialize-instance :after ((obj ,class-name) &key)
       (setf (slot-value obj 'locks)
+        ;; (slot-name . lock)*
         (nconc (slot-value obj 'locks)
           (list ,@(loop for slot-name in slot-names
-                        collecting `(cons (quote ,slot-name) (make-recursive-lock)))))))))
+                    collecting `(cons ',slot-name (make-recursive-lock
+                                                    ;; Name the lock with "class-name - slot-name".
+                                                    (format nil "~a - ~a" ',class-name ',slot-name))))))))))
 
 
 ;; Creates a class with slots having names from threaded-object-slots, with initialisation forms of NIL, and generic interfaces.

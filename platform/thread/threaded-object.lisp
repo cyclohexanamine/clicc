@@ -79,7 +79,7 @@
       (setf (nth 3 proc) ; Overwrite the thread list.
         (loop repeat num-thread collecting
           ;; Start a new thread with the loop function.
-          (thread:newthread funcall loop-func)))
+          (thread:newthread (format nil "~a - ~a" obj pname) funcall loop-func)))
       (setf (nth 4 proc) num-thread)))) ; Overwrite the number of threads.
 
 ;; Stop all threads of all processors belonging to the object
