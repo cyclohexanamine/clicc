@@ -9,8 +9,12 @@
            :push-queue :pop-queue :peek-queue :read-queue
            :make-processors :start-processors :start-processor :stop-processors :stop-processor))
 
-
 (defpackage :connection
   (:use :cl :mac)
   (:export :connection :connection-manager
            :read-address :send-message-to :open-connection))
+
+(defpackage :message
+  (:use :cl :mac)
+  (:export :message-manager
+           :add-handler :remove-handler))

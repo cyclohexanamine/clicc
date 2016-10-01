@@ -17,4 +17,6 @@
                                      (:file "connection-manager")
                                      (:module tcp-usocket
                                               :components ((:file "tcp-connection")
-                                                           (:file "tcp-connection-manager")))))))
+                                                           (:file "tcp-connection-manager")))))
+               (:module message
+                        :components ((:file "message-manager")))))
